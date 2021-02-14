@@ -29,11 +29,13 @@ const validatePair = (make, take) => {
 
   //Orders are same side, not valid
   if (make.side === take.side) {
+    console.log("Invalid side")
     return false
   }
 
   //Orders must be for same market
   if (make.market !== take.market) {
+    console.log("Invalid market")
     return false
   }
 

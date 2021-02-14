@@ -3,6 +3,8 @@ let fetch = require('node-fetch');
 require('dotenv').config()
 let Web3 = require('web3');
 let web3 = new Web3(process.env.ETH_URL)
+//Startup the server
+require("../index")
 
 //EIP712 Signature Example
 let exampleSignatureRaw = "0x790638318b21ec73c6ac6cf5596d32bfe63928bd2fe6793e969c300e6039507235ff44e018faec98c43ec61d1919242dd11979a4692cb162571df703135e18fc1b"
@@ -43,6 +45,10 @@ const faultyOrder = {
     "signed_data": web3.utils.hexToBytes(exampleSignatureRaw),
     "nonce": "0x44"
 }
+
+beforeEach(async() => {
+
+})
 
 it('Healthcheck on / endpoint', async () => {
     let req = await fetch('http://localhost:3000')

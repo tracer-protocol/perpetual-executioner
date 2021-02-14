@@ -36,7 +36,7 @@ const serialiseOrder = (rawOrder) => {
         user: rawOrder.address,
         expiration: rawOrder.expiration,
         targetTracer: rawOrder.market,
-        nonce: nonce
+        nonce: rawOrder.nonce
     }
 
     //Parse sigR, sigS, sigV as per EIP712
@@ -45,4 +45,8 @@ const serialiseOrder = (rawOrder) => {
     serialisedOrder.sigS = "0x" + sigAsByteString.substring(64, 128)
     serialisedOrder.sigV = parseInt(sigAsByteString.substring(128, 130), 16)
     return serialisedOrder
+}
+
+module.exports = {
+    serialiseOrder
 }
