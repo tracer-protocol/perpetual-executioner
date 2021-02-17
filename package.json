@@ -17,7 +17,7 @@
   "scripts": {
     "tsc": "tsc",
     "start": "node index.js",
-    "test": "mocha",
+    "test": "export BATCH_SIZE=100 && mocha",
     "ganache": "ganache-cli"
   }
 }

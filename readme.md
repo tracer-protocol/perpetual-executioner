@@ -8,6 +8,8 @@ Create a .env file with the following structure
 ```
 TRADER_CONTRACT = ADDRESS OF DEPLOYED TRADER CONTRACT
 ETH_URL = ETH RPC URL (for ganache = http://localhost:8545)
+PRIVATE_KEY = PRIVATE KEY OF ACCOUNT TO TRANSMIT BATCHES
+BATCH_SIZE = SIZE OF BATCHES TO PROCESS (OPTIMAL = 100)
 ```
 If using a local ETH RPC, start that up, or use `yarn ganache` to start up the packaged ganache-cli.
 
@@ -47,6 +49,6 @@ The executioner is waiting for matched orders on the `/submit` route. It expects
 ```
 
 ## Testing
-Start the server using `yarn start`. In a new terminal window, start ganache-cli using `yarn ganache`. In a new terminal window run `yarn test`.
+Start ganache-cli using `yarn ganache`. In a new terminal window run `yarn test`.
 
 

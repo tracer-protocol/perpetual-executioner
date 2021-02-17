@@ -22,39 +22,42 @@ app.get('/', (req, res) => {
     res.status(200).send();
 });
 
+/**
+ * Endpoint used for submitting pairs of orders to the executioner. WIll process the orders
+ * once the minimum number of orders (as given by the BATCH_SIZE env variable) is met.
+ */
 app.post('/submit', async (req, res) => {
-    console.log("Received orders")
+    let numOrders = orderStorage.getOrderCounter(req.body.maker.market)
+    console.log(`Received Orders. Pending orders to process: ${numOrders}`)
 
     //Validate orders
     if (!req.body.maker || !req.body.taker ||
         (!validateOrder(req.body.maker) || !validateOrder(req.body.taker) ||
             !validatePair(req.body.maker, req.body.taker))) {
-        console.log("Invalid orders")
-        console.log(req.body)
-        console.log(req.body.maker)
         return res.status(500).send({ error: "Invalid Orders" })
     }
-    console.log("Orders validated")
 
-    //add the order
+    //add the order to the order heap for this market
     orderStorage.addOrders(req.body.maker, req.body.taker, req.body.maker.market)
 
-    if (orderStorage.getOrderCounter(req.body.maker.market) >= 100) {
+    //If enough orders are present, process the orders on chain
+    if (numOrders >= process.env.BATCH_SIZE) {
         //submit orders
-        console.log(`Submitting ${orderCounter} orders to contract`)
+        console.log(`Submitting ${numOrders}} orders to contract`)
         let ordersToSubmit = orderStorage.getAllOrders(req.body.maker.market)
-        await submitOrders(ordersToSubmit[0], ordersToSubmit[1], traderContract, req.body.maker.market)
-        //clear order storage
+        await submitOrders(ordersToSubmit[0], ordersToSubmit[1], traderContract, req.body.maker.market, web3.eth.defaultAccount)
+        //TODO: Decide on error handling for if submitOrders does not process for some reason.
+        //clear order storage for this market
         orderStorage.clearMarket(req.body.maker.market)
-    } else {
-        console.log(`Pending orders: ${orderStorage.getOrderCounter(req.body.maker.market)}`)
     }
-    
-    console.log("Complete")
 
+    //Return
     res.status(200).send()
 })
 
+/**
+ * Will return the state of the current pending orders for a given market
+ */
 app.get('/pending-orders/:market', (req, res) => {
     if (!req.params.market) {
         res.status(500)
@@ -76,7 +79,7 @@ app.get('/pending-orders/:market', (req, res) => {
     }
 })
 
-//Setup
+//Start up the server
 app.listen(3000, async () => {
     web3 = await new Web3(process.env.ETH_URL)
     //Setup signing account
@@ -85,7 +88,7 @@ app.listen(3000, async () => {
     web3.eth.defaultAccount = account.address;
     let contractABI = trader.abi
     traderContract = new web3.eth.Contract(contractABI, process.env.TRADER_CONTRACT)
-    console.log("Executer has begun. Lets kill some orders")
+    console.log("Execute order 66")
 });
 
 module.exports = app;

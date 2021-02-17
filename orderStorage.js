@@ -1,3 +1,7 @@
+/**
+ * Class for holding orders.
+ * Uses mappings to map from a specific market (represented by a Ethereum address) to the orders for that market
+ */
 class OrderStorage {
 
     constructor() {

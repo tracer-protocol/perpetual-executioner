@@ -29,10 +29,10 @@ const web3 = require("web3")
  */
 const serialiseOrder = (rawOrder) => {
     let serialisedOrder = {}
-    serialisedOrder.limitOrder = {
+    serialisedOrder.order = {
         amount: rawOrder.amount,
         price: rawOrder.price,
-        side: rawOrder.amount === "Bid",
+        side: rawOrder.side === "Bid",
         user: rawOrder.address,
         expiration: rawOrder.expiration,
         targetTracer: rawOrder.market,
@@ -41,6 +41,7 @@ const serialiseOrder = (rawOrder) => {
 
     //Parse sigR, sigS, sigV as per EIP712
     let sigAsByteString = web3.utils.bytesToHex(rawOrder.signed_data)
+    sigAsByteString = sigAsByteString.substring(2)
     serialisedOrder.sigR = "0x" + sigAsByteString.substring(0, 64)
     serialisedOrder.sigS = "0x" + sigAsByteString.substring(64, 128)
     serialisedOrder.sigV = parseInt(sigAsByteString.substring(128, 130), 16)
