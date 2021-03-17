@@ -15,6 +15,12 @@ If using a local ETH RPC, start that up, or use `yarn ganache` to start up the p
 
 Start the server: `yarn start`
 
+### Running Locally with Docker
+If you wish to run the service locally with Docker, run the following commands
+`docker build . -t executioner`
+then start the docker image using
+`docker run --env-file=.env executioner`
+
 
 ## Usage
 The executioner is waiting for matched orders on the `/submit` route. It expects orders of the form
@@ -51,4 +57,12 @@ The executioner is waiting for matched orders on the `/submit` route. It expects
 ## Testing
 Start ganache-cli using `yarn ganache`. In a new terminal window run `yarn test`.
 
+## Deployment
+To deploy changes to GCP, use the following. Note the env file for the image lives in GCP itself and edits to it should be made there. Reach out to @raymogg for help on this.
+### Build and tag the image
+`docker build . -t gcr.io/tracer-protocol-testing/executioner`
+
+### Push to GCR
+The executioner can easily be deployed to GCP by running the following.
+`docker push gcr.io/tracer-protocol-testing/executioner`
 
