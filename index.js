@@ -39,11 +39,13 @@ app.post('/submit', async (req, res) => {
 
     //add the order to the order heap for this market
     orderStorage.addOrders(req.body.maker, req.body.taker, req.body.maker.market)
+    //repoll the number of orders
+    numOrders = orderStorage.getOrderCounter(req.body.maker.market)
 
     //If enough orders are present, process the orders on chain
     if (numOrders >= process.env.BATCH_SIZE) {
         //submit orders
-        console.log(`Submitting ${numOrders}} orders to contract`)
+        console.log(`Submitting ${numOrders} orders to contract`)
         let ordersToSubmit = orderStorage.getAllOrders(req.body.maker.market)
         await submitOrders(ordersToSubmit[0], ordersToSubmit[1], traderContract, req.body.maker.market, web3.eth.defaultAccount)
         //TODO: Decide on error handling for if submitOrders does not process for some reason.

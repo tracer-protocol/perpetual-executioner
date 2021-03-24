@@ -10,7 +10,6 @@ const validateOrder = (order) => {
     order.price === undefined ||
     order.amount === undefined ||
     order.expiration === undefined ||
-    order.flags === undefined ||
     order.signed_data === undefined ||
     order.nonce === undefined) {
     console.log("Order Validation: Invalid field in order")

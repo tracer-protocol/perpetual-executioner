@@ -30,8 +30,8 @@ const web3 = require("web3")
 const serialiseOrder = (rawOrder) => {
     let serialisedOrder = {}
     serialisedOrder.order = {
-        amount: rawOrder.amount,
-        price: rawOrder.price,
+        amount: rawOrder.amount.toString(),
+        price: rawOrder.price.toString(),
         side: rawOrder.side === "Bid",
         user: rawOrder.address,
         expiration: rawOrder.expiration,
