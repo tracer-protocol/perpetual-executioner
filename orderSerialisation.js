@@ -33,10 +33,10 @@ const serialiseOrder = (rawOrder) => {
         amount: rawOrder.amount.toString(),
         price: rawOrder.price.toString(),
         side: rawOrder.side === "Bid",
-        user: rawOrder.address,
+        user: web3.utils.toChecksumAddress(rawOrder.address),
         expiration: rawOrder.expiration,
-        targetTracer: rawOrder.market,
-        nonce: rawOrder.nonce
+        targetTracer: web3.utils.toChecksumAddress(rawOrder.market),
+        nonce: parseInt(rawOrder.nonce, 16)
     }
 
     //Parse sigR, sigS, sigV as per EIP712
