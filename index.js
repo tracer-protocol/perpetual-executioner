@@ -37,7 +37,7 @@ app.post('/submit', async (req, res) => {
         return res.status(500).send({ error: "Invalid Orders" })
     }
 
-    //add the order to the order heap for this market
+    // //add the order to the order heap for this market
     orderStorage.addOrders(req.body.maker, req.body.taker, req.body.maker.market)
     //repoll the number of orders
     numOrders = orderStorage.getOrderCounter(req.body.maker.market)

@@ -1,5 +1,5 @@
 let serialiseOrder = require("./orderSerialisation").serialiseOrder
-
+const web3 = require("web3")
 
 /**
  * Submit orders to the on chain trader contract.
@@ -8,7 +8,8 @@ const submitOrders = async (makerOrders, takerOrders, contract, market, sendingA
     let serialisedMakeOrders = makerOrders.map((order) => serialiseOrder(order))
     let serialisedTakeOrders = takerOrders.map((order) => serialiseOrder(order))
     try {
-        let txn = await contract.methods.executeTrade(serialisedMakeOrders, serialisedTakeOrders, market).send({ from: sendingAccount, gas: "200000"})
+        let gas = await contract.methods.executeTrade(serialisedMakeOrders, serialisedTakeOrders, web3.utils.toChecksumAddress(market)).estimateGas({ from: sendingAccount })
+        let txn = await contract.methods.executeTrade(serialisedMakeOrders, serialisedTakeOrders, web3.utils.toChecksumAddress(market)).send({ from: sendingAccount, gas: gas })
         return txn
     } catch (e) {
         console.error(e)
