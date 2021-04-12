@@ -4,8 +4,8 @@
 const validateOrder = (order) => {
   //Require all fields
   if (order.id === undefined ||
-    order.address === undefined ||
-    order.market === undefined ||
+    order.user === undefined ||
+    order.target_tracer === undefined ||
     order.side === undefined ||
     order.price === undefined ||
     order.amount === undefined ||
@@ -39,7 +39,7 @@ const validatePair = (make, take) => {
   }
 
   //Orders must be for same market
-  if (make.market !== take.market) {
+  if (make.target_tracer !== take.target_tracer) {
     console.log("Order validation: Invalid market in pair")
     return false
   }
