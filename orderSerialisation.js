@@ -33,9 +33,9 @@ const serialiseOrder = (rawOrder) => {
         amount: rawOrder.amount.toString(),
         price: rawOrder.price.toString(),
         side: rawOrder.side === "Bid",
-        user: web3.utils.toChecksumAddress(rawOrder.address),
+        user: web3.utils.toChecksumAddress(rawOrder.user),
         expiration: rawOrder.expiration,
-        targetTracer: web3.utils.toChecksumAddress(rawOrder.market),
+        targetTracer: web3.utils.toChecksumAddress(rawOrder.target_tracer),
         nonce: parseInt(rawOrder.nonce, 16)
     }
 

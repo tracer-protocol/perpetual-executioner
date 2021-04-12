@@ -27,7 +27,7 @@ app.get('/', (req, res) => {
  * once the minimum number of orders (as given by the BATCH_SIZE env variable) is met.
  */
 app.post('/submit', async (req, res) => {
-    let numOrders = orderStorage.getOrderCounter(req.body.maker.market)
+    let numOrders = orderStorage.getOrderCounter(req.body.maker.target_tracer)
     console.log(`Received Orders. Pending orders to process: ${numOrders}`)
 
     //Validate orders
@@ -38,19 +38,19 @@ app.post('/submit', async (req, res) => {
     }
 
     // //add the order to the order heap for this market
-    orderStorage.addOrders(req.body.maker, req.body.taker, req.body.maker.market)
+    orderStorage.addOrders(req.body.maker, req.body.taker, req.body.maker.target_tracer)
     //repoll the number of orders
-    numOrders = orderStorage.getOrderCounter(req.body.maker.market)
+    numOrders = orderStorage.getOrderCounter(req.body.maker.target_tracer)
 
     //If enough orders are present, process the orders on chain
     if (numOrders >= process.env.BATCH_SIZE) {
         //submit orders
         console.log(`Submitting ${numOrders} orders to contract`)
-        let ordersToSubmit = orderStorage.getAllOrders(req.body.maker.market)
-        await submitOrders(ordersToSubmit[0], ordersToSubmit[1], traderContract, req.body.maker.market, web3.eth.defaultAccount)
+        let ordersToSubmit = orderStorage.getAllOrders(req.body.maker.target_tracer)
+        await submitOrders(ordersToSubmit[0], ordersToSubmit[1], traderContract, req.body.maker.target_tracer, web3.eth.defaultAccount)
         //TODO: Decide on error handling for if submitOrders does not process for some reason.
         //clear order storage for this market
-        orderStorage.clearMarket(req.body.maker.market)
+        orderStorage.clearMarket(req.body.maker.target_tracer)
     }
 
     //Return
