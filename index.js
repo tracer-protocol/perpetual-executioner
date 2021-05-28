@@ -1,6 +1,6 @@
 let express = require("express")
 let Web3 = require('web3');
-let trader = require('./contracts/Trader.json')
+let traderABI = require('./contracts/Trader.json')
 let bodyParser = require('body-parser')
 let validateOrder = require("./orderValidation").validateOrder
 let validatePair = require("./orderValidation").validatePair
@@ -47,10 +47,16 @@ app.post('/submit', async (req, res) => {
         //submit orders
         console.log(`Submitting ${numOrders} orders to contract`)
         let ordersToSubmit = orderStorage.getAllOrders(req.body.maker.target_tracer)
-        await submitOrders(ordersToSubmit[0], ordersToSubmit[1], traderContract, req.body.maker.target_tracer, web3.eth.defaultAccount)
-        //TODO: Decide on error handling for if submitOrders does not process for some reason.
-        //clear order storage for this market
-        orderStorage.clearMarket(req.body.maker.target_tracer)
+        try {
+            await submitOrders(ordersToSubmit[0], ordersToSubmit[1], traderContract, web3.eth.defaultAccount)
+            //TODO: Decide on error handling for if submitOrders does not process for some reason.
+            //clear order storage for this market
+            orderStorage.clearMarket(req.body.maker.target_tracer)
+            console.log(`Orders submitted and cleared`)
+        } catch {
+            console.log(`Error submitting batch`)
+            console(ordersToSubmit)
+        }
     }
 
     //Return
@@ -89,8 +95,7 @@ app.listen(3000, async () => {
     const account = web3.eth.accounts.privateKeyToAccount(process.env.PRIVATE_KEY);
     web3.eth.accounts.wallet.add(account);
     web3.eth.defaultAccount = account.address;
-    let contractABI = trader.abi
-    traderContract = new web3.eth.Contract(contractABI, process.env.TRADER_CONTRACT)
+    traderContract = new web3.eth.Contract(traderABI, process.env.TRADER_CONTRACT)
     console.log("Execute order 66")
 });
 

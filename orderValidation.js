@@ -3,15 +3,13 @@
  */
 const validateOrder = (order) => {
   //Require all fields
-  if (order.id === undefined ||
-    order.user === undefined ||
+  if (order.user === undefined ||
     order.target_tracer === undefined ||
     order.side === undefined ||
     order.price === undefined ||
     order.amount === undefined ||
     order.expiration === undefined ||
-    order.signed_data === undefined ||
-    order.nonce === undefined) {
+    order.signed_data === undefined) {
     console.log("Order Validation: Invalid field in order")
     return false
   }
