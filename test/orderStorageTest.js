@@ -16,7 +16,6 @@ const sampleOrder1 = {
     "expiration": 1596600983,
     "flags": { "bits": 1 },
     "signed_data": web3.utils.hexToBytes(exampleSignatureRaw),
-    "nonce": "0x44"
 }
 
 const sampleOrder2 = {
@@ -29,7 +28,6 @@ const sampleOrder2 = {
     "expiration": 1596600983,
     "flags": { "bits": 1 },
     "signed_data": web3.utils.hexToBytes(exampleSignatureRaw),
-    "nonce": "0x44"
 }
 
 const sampleMarket1 = "0x529da3408a37a91c8154c64f3628db4eaa7b8da2"

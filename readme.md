@@ -37,7 +37,6 @@ The executioner is waiting for matched orders on the `/submit` route. It expects
         "expiration":1596600983,
         "flags":{"bits":1},
         "signed_data":[12,33,88,43,42,22],
-        "nonce":"0x44"
     },
     "taker": {
         "id":"0xc500c7063a6a2abbf651a355c9ef9888ed217de2ba7b1538603331e7e3009161",
@@ -49,7 +48,6 @@ The executioner is waiting for matched orders on the `/submit` route. It expects
         "expiration":1596600983,
         "flags":{"bits":1},
         "signed_data":[12,33,88,43,42,22],
-        "nonce":"0x44"
     }
 }
 ```

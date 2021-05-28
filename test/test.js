@@ -17,7 +17,6 @@ const sampleOrder1 = {
     "amount": 5,
     "expiration": 1596600983,
     "signed_data": web3.utils.hexToBytes(exampleSignatureRaw),
-    "nonce": "0x44"
 }
 
 const sampleOrder2 = {
@@ -29,7 +28,6 @@ const sampleOrder2 = {
     "amount": 5,
     "expiration": 1596600983,
     "signed_data": web3.utils.hexToBytes(exampleSignatureRaw),
-    "nonce": "0x44"
 }
 
 const faultyOrder = {
@@ -40,7 +38,6 @@ const faultyOrder = {
     "amount": 5,
     "expiration": 1596600983,
     "signed_data": web3.utils.hexToBytes(exampleSignatureRaw),
-    "nonce": "0x44"
 }
 
 it('Healthcheck on / endpoint', async () => {
