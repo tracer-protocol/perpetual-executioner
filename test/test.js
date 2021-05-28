@@ -10,45 +10,35 @@ require("../index")
 let exampleSignatureRaw = "0x790638318b21ec73c6ac6cf5596d32bfe63928bd2fe6793e969c300e6039507235ff44e018faec98c43ec61d1919242dd11979a4692cb162571df703135e18fc1b"
 const sampleOrder1 = {
     "id": 0,
-    "address": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
-    "market": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
+    "user": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
+    "target_tracer": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
     "side": "Bid",
     "price": 12,
     "amount": 5,
     "expiration": 1596600983,
-    "flags": { "bits": 1 },
     "signed_data": web3.utils.hexToBytes(exampleSignatureRaw),
-    "nonce": "0x44"
 }
 
 const sampleOrder2 = {
     "id": 0,
-    "address": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
-    "market": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
+    "user": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
+    "target_tracer": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
     "side": "Ask",
     "price": 12,
     "amount": 5,
     "expiration": 1596600983,
-    "flags": { "bits": 1 },
     "signed_data": web3.utils.hexToBytes(exampleSignatureRaw),
-    "nonce": "0x44"
 }
 
 const faultyOrder = {
     "id": 0,
-    "address": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
+    "user": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
     "side": "Bid",
     "price": 12,
     "amount": 5,
     "expiration": 1596600983,
-    "flags": { "bits": 1 },
     "signed_data": web3.utils.hexToBytes(exampleSignatureRaw),
-    "nonce": "0x44"
 }
-
-beforeEach(async() => {
-
-})
 
 it('Healthcheck on / endpoint', async () => {
     let req = await fetch('http://localhost:3000')
