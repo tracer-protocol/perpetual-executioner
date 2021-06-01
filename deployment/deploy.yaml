@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tracer-executioner
+  labels:
+    app: tracer-executioner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tracer-executioner
+  template:
+    metadata:
+      labels:
+        app: tracer-executioner
+    spec:
+      containers:
+      - name: tracer-executioner
+        image: gcr.io/tracer-protocol-testing/executioner:latest
+        envFrom:
+        - configMapRef:
+            name: executioner-env
+        ports:
+        - containerPort: 3000
+      
