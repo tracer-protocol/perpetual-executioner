@@ -1,3 +1,5 @@
+const verifySignature = require("@tracer-protocol/tracer-utils").verifySignature
+
 /**
  * Validates a single order to ensure that orders are not transmitted on chain that will fail.
  */
@@ -45,7 +47,15 @@ const validatePair = (make, take) => {
   return true
 }
 
+/**
+ * Verifies if a certain signer was correctly signed by the order maker
+ */
+const validateSignature = (order, trader, network, sig) => {
+  return verifySignature(order, trader, sig, order.maker, network)
+}
+
 module.exports = {
   validateOrder,
-  validatePair
+  validatePair,
+  validateSignature
 }

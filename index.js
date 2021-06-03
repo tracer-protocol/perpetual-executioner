@@ -3,6 +3,7 @@ let Web3 = require('web3');
 let traderABI = require('./contracts/Trader.json')
 let bodyParser = require('body-parser')
 let validateOrder = require("./orderValidation").validateOrder
+let validateSignature = require("./orderValidation").validateSignature
 let validatePair = require("./orderValidation").validatePair
 let submitOrders = require("./orderSubmission").submitOrders
 let OrderStorage = require("./orderStorage").OrderStorage
@@ -61,6 +62,21 @@ app.post('/submit', async (req, res) => {
 
     //Return
     res.status(200).send()
+})
+
+/**
+ * Endpoint for validation of orders. Used by the OME to validate signatures before 
+ * passing on the orders to the book. This rejects invalid orders early to avoid
+ * false liquidity on the books.
+ */
+app.post('/check', async (req, res) => {
+    if (!req.body.order || !req.body.trader || !req.body.network || !req.body.sig) {
+        console.log("missing params")
+        return res.status(500).send({ error: "Invalid params provided" })
+    }
+    let isValidSig = validateSignature(req.body.order, req.body.trader, req.body.network, req.body.sig)
+    console.log(isValidSig)
+    return res.status(200).send({ verified: isValidSig })
 })
 
 /**
