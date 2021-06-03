@@ -54,8 +54,8 @@ app.post('/submit', async (req, res) => {
             orderStorage.clearMarket(req.body.maker.target_tracer)
             console.log(`Orders submitted and cleared`)
         } catch {
-            console.log(`Error submitting batch`)
-            console(ordersToSubmit)
+            console.log(`Error submitting batch: `)
+            console.log(ordersToSubmit)
         }
     }
 
