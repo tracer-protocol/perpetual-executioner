@@ -72,7 +72,7 @@ app.post('/submit', async (req, res) => {
 app.post('/check', async (req, res) => {
     if (!req.body.order || !req.body.trader || !req.body.network || !req.body.sig) {
         console.log("missing params")
-        return res.status(500).send({ error: "Invalid params provided" })
+        return res.status(400).send({ error: "Invalid params provided" })
     }
     let isValidSig = validateSignature(req.body.order, req.body.trader, req.body.network, req.body.sig)
     console.log(isValidSig)
