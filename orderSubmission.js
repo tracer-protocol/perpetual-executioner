@@ -10,7 +10,7 @@ const submitOrders = async (makerOrders, takerOrders, contract, sendingAccount) 
     let serialisedTakeOrders = takerOrders.map((order) => omeOrderToOrder(web3, order))
     try {
         let gas = await contract.methods.executeTrade(serialisedMakeOrders, serialisedTakeOrders).estimateGas({ from: sendingAccount })
-        let txn = await contract.methods.executeTrade(serialisedMakeOrders, serialisedTakeOrders).send({ from: sendingAccount, gas: 1500000 })
+        let txn = await contract.methods.executeTrade(serialisedMakeOrders, serialisedTakeOrders).send({ from: sendingAccount, gas: gas })
         return txn
     } catch (e) {
         console.error(e)
