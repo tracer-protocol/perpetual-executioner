@@ -7,6 +7,7 @@ let validateSignature = require("./orderValidation").validateSignature
 let validatePair = require("./orderValidation").validatePair
 let submitOrders = require("./orderSubmission").submitOrders
 let OrderStorage = require("./orderStorage").OrderStorage
+let omeOrderToOrder = require("@tracer-protocol/tracer-utils").omeOrderToOrder
 require('dotenv').config()
 
 // Create a new express app instance
@@ -70,11 +71,18 @@ app.post('/submit', async (req, res) => {
  * false liquidity on the books.
  */
 app.post('/check', async (req, res) => {
-    if (!req.body.order || !req.body.trader || !req.body.network || !req.body.sig) {
-        console.log("missing params")
+    if (!req.body.order) {
+        console.log("missing order")
         return res.status(400).send({ error: "Invalid params provided" })
     }
-    let isValidSig = validateSignature(req.body.order, req.body.trader, req.body.network, req.body.sig)
+
+    let network = process.env.NETWORK_ID
+    let omeOrder = req.body.order;
+    let contractOrder = omeOrderToOrder(web3, omeOrder)
+
+    let signature = web3.utils.bytesToHex(omeOrder.signed_data)
+
+    let isValidSig = validateSignature(contractOrder.order, process.env.TRADER_CONTRACT, network, signature)
     console.log(isValidSig)
     return res.status(200).send({ verified: isValidSig })
 })
