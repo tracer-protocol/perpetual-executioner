@@ -5,50 +5,38 @@
 class OrderStorage {
 
     constructor() {
-        this.makeOrders = new Map()
-        this.takeOrders = new Map()
-        this.orderCounter = new Map()
+        this.makeOrders = new Array()
+        this.takeOrders = new Array()
+        this.totalOrders = 0
     }
 
 
-    getAllOrders(market) {
-        if (this.makeOrders.has(market)) {
-            return [this.makeOrders.get(market), this.takeOrders.get(market), this.orderCounter.get(market)]
-        } else {
-            return null
-        }
+    getAllOrders() {
+        return [this.makeOrders, this.takeOrders, this.totalOrders]
     }
 
-    getOrderCounter(market) {
-        if (this.orderCounter.has(market)) {
-            return this.orderCounter.get(market)
-        } else {
-            return 0
-        }
+    getOrderCounter() {
+        return this.totalOrders
     }
 
-    addOrders(make, take, market) {
-        //init market if needed
-        if (!this.makeOrders.has(market)) {
-            this.clearMarket(market)
+    addOrders(make, take) {
+        // check executioner is in a healthy state at all times
+        if (this.takeOrders.length != this.makeOrders.length) {
+            //raise alerts, executioner is unhealthy
+            console.log("ERROR: Maker Taker mismatch")
+            return
         }
 
-        let makes = this.makeOrders.get(market) 
-        let takes = this.takeOrders.get(market)
-        let count = this.orderCounter.get(market)
-
-        makes.push(make)
-        takes.push(take)
-        count += 2
-        this.makeOrders.set(market, makes)
-        this.takeOrders.set(market, takes)
-        this.orderCounter.set(market, count)
+        // add orders
+        this.makeOrders.push(make)
+        this.takeOrders.push(take)
+        this.totalOrders += 2
     }
 
-    clearMarket(market) {
-        this.makeOrders.set(market, new Array())
-        this.takeOrders.set(market, new Array())
-        this.orderCounter.set(market, 0)
+    clearOrders() {
+        this.makeOrders = new Array()
+        this.takeOrders = new Array()
+        this.totalOrders = 0
     }
 }
 

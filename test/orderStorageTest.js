@@ -40,8 +40,11 @@ beforeEach(() => {
 
 context('Initialises', async () => {
     it('Has no markets', async() => {
-        let allOrders = orderStorage.getAllOrders(sampleMarket1)
-        assert.strictEqual(allOrders, null)
+        let allOrders = orderStorage.getAllOrders()
+        console.log(allOrders)
+        assert.notStrictEqual(allOrders[0], new Array())
+        assert.notStrictEqual(allOrders[1], new Array())
+        assert.strictEqual(allOrders[2], 0)
     })
 });
 
@@ -50,37 +53,32 @@ context('Adding orders', async() => {
         orderStorage.addOrders(sampleOrder1, sampleOrder2, sampleMarket1)
         orderStorage.addOrders(sampleOrder1, sampleOrder2, sampleMarket2)
         
-        //Get markets
-        let market1Orders = orderStorage.getAllOrders(sampleMarket1)
-        let market2Orders = orderStorage.getAllOrders(sampleMarket2)
+        //Get all orders
+        let allOrders = orderStorage.getAllOrders(sampleMarket1)
 
         //Validate
-        assert.strictEqual(market1Orders[0].length, 1)
-        assert.strictEqual(market1Orders[1].length, 1)
-        assert.strictEqual(market1Orders[2], 2)
-        assert.strictEqual(market1Orders[0][0], sampleOrder1)
-        assert.strictEqual(market1Orders[1][0], sampleOrder2)
-
-        assert.strictEqual(market2Orders[0].length, 1)
-        assert.strictEqual(market2Orders[1].length, 1)
-        assert.strictEqual(market2Orders[2], 2)
-        assert.strictEqual(market2Orders[0][0], sampleOrder1)
-        assert.strictEqual(market2Orders[1][0], sampleOrder2)
+        assert.strictEqual(allOrders[0].length, 2)
+        assert.strictEqual(allOrders[1].length, 2)
+        assert.strictEqual(allOrders[2], 4)
+        assert.strictEqual(allOrders[0][0], sampleOrder1)
+        assert.strictEqual(allOrders[1][0], sampleOrder2)
+        assert.strictEqual(allOrders[0][1], sampleOrder1)
+        assert.strictEqual(allOrders[1][1], sampleOrder2)
     })
 })
 
 context('Clearing orders', async() => {
     it('Can clear an order book', async() => {
-        orderStorage.addOrders(sampleOrder1, sampleOrder2, sampleMarket1)
-        orderStorage.addOrders(sampleOrder1, sampleOrder2, sampleMarket2)
+        orderStorage.addOrders(sampleOrder1, sampleOrder2)
+        orderStorage.addOrders(sampleOrder1, sampleOrder2)
 
-        orderStorage.clearMarket(sampleMarket1)
+        orderStorage.clearOrders()
 
         //Market 1 should now be cleared
-        let market1Orders = orderStorage.getAllOrders(sampleMarket1)
+        let allOrders = orderStorage.getAllOrders()
 
-        assert.strictEqual(market1Orders[0].length, 0)
-        assert.strictEqual(market1Orders[1].length, 0)
-        assert.strictEqual(market1Orders[2], 0)
+        assert.strictEqual(allOrders[0].length, 0)
+        assert.strictEqual(allOrders[1].length, 0)
+        assert.strictEqual(allOrders[2], 0)
     })
 })

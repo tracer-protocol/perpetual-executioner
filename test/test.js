@@ -65,19 +65,3 @@ it('Rejects with missing fields', async () => {
     let req = await fetch('http://localhost:3000/submit', { method: "POST", body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' } })
     assert.strictEqual(req.ok, false)
 })
-
-it('Kepers track of records', async () => {
-    //Send 20 orders
-    let data = {
-        "maker": sampleOrder1,
-        "taker": sampleOrder2
-    }
-    for (var i = 0; i < 10; i++) {
-        await fetch('http://localhost:3000/submit', { method: "POST", body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' } })
-    }
-
-    let pendingOrders = await fetch(`http://localhost:3000/pending-orders/0x529da3408a37a91c8154c64f3628db4eaa7b8da2`)
-    let result = await pendingOrders.json()
-    //20 orders from this test, 2 from test 2
-    assert.strictEqual(result.count, 22)
-})
