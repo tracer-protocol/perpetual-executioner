@@ -49,7 +49,7 @@ app.post('/submit', async (req, res) => {
         console.log(`Submitting ${numOrders} orders to contract`)
         let ordersToSubmit = orderStorage.getAllOrders(req.body.maker.target_tracer)
         try {
-            await submitOrders(ordersToSubmit[0], ordersToSubmit[1], traderContract, web3.eth.defaultAccount)
+            await submitOrders(ordersToSubmit[0], ordersToSubmit[1], traderContract, process.env.GAS_LIMIT)
             //TODO: Decide on error handling for if submitOrders does not process for some reason.
             //clear order storage for this market
             orderStorage.clearMarket(req.body.maker.target_tracer)
