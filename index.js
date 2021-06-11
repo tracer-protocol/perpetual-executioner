@@ -1,5 +1,5 @@
 let express = require("express")
-const { ethers } = require("ethers");
+let Web3 = require('web3');
 let traderABI = require('./contracts/Trader.json')
 let bodyParser = require('body-parser')
 let validateOrder = require("./orderValidation").validateOrder
@@ -55,8 +55,7 @@ app.post('/submit', async (req, res) => {
             //clear order storage for this market
             orderStorage.clearMarket(req.body.maker.target_tracer)
             console.log(`Orders submitted and cleared`)
-        } catch (e) {
-            console.log(e)
+        } catch {
             console.log(`Error submitting batch: `)
             console.log(ordersToSubmit)
         }
@@ -114,12 +113,13 @@ app.get('/pending-orders/:market', (req, res) => {
 
 //Start up the server
 app.listen(3000, async () => {
-    let provider = new ethers.providers.JsonRpcProvider(process.env.ETH_URL)
+    web3 = await new Web3(process.env.ETH_URL)
     console.log(`Connected to RPC ${process.env.ETH_URL}`)
     //Setup signing account
-    const account = new ethers.Wallet(process.env.PRIVATE_KEY);
-    web3 = account.connect(provider)
-    traderContract = new ethers.Contract(process.env.TRADER_CONTRACT, traderABI, web3)
+    const account = web3.eth.accounts.privateKeyToAccount(process.env.PRIVATE_KEY);
+    web3.eth.accounts.wallet.add(account);
+    web3.eth.defaultAccount = account.address;
+    traderContract = new web3.eth.Contract(traderABI, process.env.TRADER_CONTRACT)
     console.log("Execute order 66")
 });
 

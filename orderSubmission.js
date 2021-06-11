@@ -9,7 +9,7 @@ const submitOrders = async (makerOrders, takerOrders, contract, gasLimit) => {
     let serialisedMakeOrders = makerOrders.map((order) => omeOrderToOrder(web3, order))
     let serialisedTakeOrders = takerOrders.map((order) => omeOrderToOrder(web3, order))
     try {
-        return await contract.executeTrade(serialisedMakeOrders, serialisedTakeOrders, { gasLimit: gasLimit})
+        return await contract.executeTrade(serialisedMakeOrders, serialisedTakeOrders, { gasLimit: gasLimit })
     } catch (e) {
         console.error(e)
         throw e
