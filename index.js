@@ -83,8 +83,11 @@ app.post('/check', async (req, res) => {
     let signature = web3.utils.bytesToHex(omeOrder.signed_data)
 
     let isValidSig = validateSignature(contractOrder.order, process.env.TRADER_CONTRACT, network, signature)
-    console.log(isValidSig)
-    return res.status(200).send({ verified: isValidSig })
+    if (isValidSig) {
+        return res.status(200)
+    } else {
+        return res.status(400)
+    }
 })
 
 /**
