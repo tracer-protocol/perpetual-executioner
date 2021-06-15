@@ -84,9 +84,9 @@ app.post('/check', async (req, res) => {
 
     let isValidSig = validateSignature(contractOrder.order, process.env.TRADER_CONTRACT, network, signature)
     if (isValidSig) {
-        return res.status(200)
+        return res.status(200).send()
     } else {
-        return res.status(400)
+        return res.status(400).send()
     }
 })
 
