@@ -31,7 +31,6 @@ app.get('/', (req, res) => {
 app.post('/submit', async (req, res) => {
     let numOrders = orderStorage.getOrderCounter(req.body.maker.target_tracer)
     console.log(`Received Orders. Pending orders to process: ${numOrders}`)
-
     //Validate orders
     if (!req.body.maker || !req.body.taker ||
         (!validateOrder(req.body.maker) || !validateOrder(req.body.taker) ||
@@ -80,7 +79,7 @@ app.post('/check', async (req, res) => {
     let omeOrder = req.body.order;
     let contractOrder = omeOrderToOrder(web3, omeOrder)
 
-    let signature = web3.utils.bytesToHex(omeOrder.signed_data)
+    let signature = omeOrder.signed_data.toString()
 
     let isValidSig = validateSignature(contractOrder.order, process.env.TRADER_CONTRACT, network, signature)
     if (isValidSig) {
