@@ -54,8 +54,19 @@ const validateSignature = (order, trader, network, sig) => {
   return verifySignature(order, trader, sig, order.maker, network)
 }
 
+/**
+ * Validates if an address is whitelisted to trade
+ */
+const validateWhitelist = (web3, address) => {
+  // whitelist is passed in as a csv string
+  let whitelist = process.env.WHITELIST.split(",")
+  whitelist = whitelist.map((_address) => web3.utils.toChecksumAddress(_address))
+  return whitelist.includes(web3.utils.toChecksumAddress(address))
+}
+
 module.exports = {
   validateOrder,
   validatePair,
-  validateSignature
+  validateSignature,
+  validateWhitelist
 }
