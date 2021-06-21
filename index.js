@@ -5,6 +5,7 @@ let bodyParser = require('body-parser')
 let validateOrder = require("./orderValidation").validateOrder
 let validateSignature = require("./orderValidation").validateSignature
 let validatePair = require("./orderValidation").validatePair
+let validateWhitelist = require("./orderValidation").validateWhitelist
 let submitOrders = require("./orderSubmission").submitOrders
 let OrderStorage = require("./orderStorage").OrderStorage
 let omeOrderToOrder = require("@tracer-protocol/tracer-utils").omeOrderToOrder
@@ -82,7 +83,9 @@ app.post('/check', async (req, res) => {
     let signature = omeOrder.signed_data.toString()
 
     let isValidSig = validateSignature(contractOrder.order, process.env.TRADER_CONTRACT, network, signature)
-    if (isValidSig) {
+    let isWhitelisted = validateWhitelist(web3, contractOrder.order.maker)
+    
+    if (isValidSig && isWhitelisted) {
         return res.status(200).send()
     } else {
         return res.status(400).send()
