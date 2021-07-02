@@ -1,15 +1,22 @@
+require('dotenv').config()
 let express = require("express")
 let Web3 = require('web3');
+const accounting = require('@tracer-protocol/tracer-utils')
 let traderABI = require('./contracts/Trader.json')
+let perpetualSwapABI = require('@tracer-protocol/contracts/abi/contracts/TracerPerpetualSwaps.sol/TracerPerpetualSwaps.json')
+let pricingABI = require('@tracer-protocol/contracts/abi/contracts/Pricing.sol/Pricing.json')
 let bodyParser = require('body-parser')
 let validateOrder = require("./orderValidation").validateOrder
 let validateSignature = require("./orderValidation").validateSignature
 let validatePair = require("./orderValidation").validatePair
 let validateWhitelist = require("./orderValidation").validateWhitelist
+let validateCreatedTime = require("./orderValidation").validateCreatedTime
+let validateExpiryTime = require("./orderValidation").validateExpiryTime
+
 let submitOrders = require("./orderSubmission").submitOrders
 let OrderStorage = require("./orderStorage").OrderStorage
-let omeOrderToOrder = require("@tracer-protocol/tracer-utils").omeOrderToOrder
-require('dotenv').config()
+let omeOrderToOrder = require("@tracer-protocol/tracer-utils").omeOrderToOrder;
+const { default: BigNumber } = require('bignumber.js');
 
 // Create a new express app instance
 const app = express();
@@ -66,7 +73,7 @@ app.post('/submit', async (req, res) => {
 })
 
 /**
- * Endpoint for validation of orders. Used by the OME to validate signatures before 
+ * Endpoint for validation of orders. Used by the OME to validate signatures before
  * passing on the orders to the book. This rejects invalid orders early to avoid
  * false liquidity on the books.
  */
@@ -82,14 +89,84 @@ app.post('/check', async (req, res) => {
 
     let signature = omeOrder.signed_data.toString()
 
-    let isValidSig = validateSignature(contractOrder.order, process.env.TRADER_CONTRACT, network, signature)
-    let isWhitelisted = validateWhitelist(web3, contractOrder.order.maker)
-    
-    if (isValidSig && isWhitelisted) {
-        return res.status(200).send()
-    } else {
-        return res.status(400).send()
+    const isValidSig = validateSignature(contractOrder.order, process.env.TRADER_CONTRACT, network, signature)
+    if(!isValidSig) {
+        return res.status(400).send({
+            message: 'Invalid signature, ensure the correct Trading Contract is being used',
+            order: contractOrder.order
+        });
     }
+
+    const isWhitelisted = validateWhitelist(web3, contractOrder.order.maker)
+    if(!isWhitelisted) {
+        return res.status(400).send({
+            message: 'Address not whitelisted for trading',
+            order: contractOrder.order
+        });
+    }
+
+    // validate timestamps
+    const isValidCreatedTime = validateCreatedTime(contractOrder.order.created)
+    if(!isValidCreatedTime) {
+        return res.status(400).send({
+            message: 'Order created time is invalid',
+            order: contractOrder.order
+        });
+    }
+
+    const isValidExpiryTime = validateExpiryTime(contractOrder.order.expires)
+    if(!isValidExpiryTime) {
+        return res.status(400).send({
+            message: 'Order expiry time is invalid',
+            order: contractOrder.order
+        });
+    }
+
+    // check if user has enough margin in the market
+    const perpetualSwapContract = new web3.eth.Contract(perpetualSwapABI, contractOrder.order.market)
+
+    const feeRate = await perpetualSwapContract.methods.feeRate().call()
+    const maxLeverage = await perpetualSwapContract.methods.maxLeverage().call()
+
+    const currentPosition = await perpetualSwapContract.methods.getBalance(contractOrder.order.maker).call()
+    // const positionAfterTrade =
+
+    const positionAfterTrade = accounting.calcPositionAfterTrade({
+            quote: accounting.fromWad(currentPosition.position.quote),
+            base: accounting.fromWad(currentPosition.position.base)
+        },
+        {
+            amount: accounting.fromWad(contractOrder.order.amount),
+            price: accounting.fromWad(contractOrder.order.price),
+            position: contractOrder.order.side
+        },
+        accounting.fromWad(feeRate)
+    )
+
+    const marginAfterTrade = accounting.calcTotalMargin(
+        positionAfterTrade.quote,
+        positionAfterTrade.base,
+        accounting.fromWad(contractOrder.order.price)
+    )
+
+    const minimumMarginAfterTrade = accounting.calcMinimumMargin(
+        positionAfterTrade.quote,
+        positionAfterTrade.base,
+        accounting.fromWad(contractOrder.order.price),
+        accounting.fromWad(maxLeverage)
+    )
+
+    if(marginAfterTrade.lt(minimumMarginAfterTrade)) {
+        return res.status(400).send({
+            message: 'Account does not have enough margin to perform trade',
+            order: contractOrder.order
+        })
+    }
+
+    return res.status(200).send({
+        message: 'Order is valid',
+        order: contractOrder.order
+    })
 })
 
 /**
