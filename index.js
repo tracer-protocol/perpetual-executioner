@@ -4,7 +4,6 @@ let Web3 = require('web3');
 const accounting = require('@tracer-protocol/tracer-utils')
 let traderABI = require('./contracts/Trader.json')
 let perpetualSwapABI = require('@tracer-protocol/contracts/abi/contracts/TracerPerpetualSwaps.sol/TracerPerpetualSwaps.json')
-let pricingABI = require('@tracer-protocol/contracts/abi/contracts/Pricing.sol/Pricing.json')
 let bodyParser = require('body-parser')
 let validateOrder = require("./orderValidation").validateOrder
 let validateSignature = require("./orderValidation").validateSignature
