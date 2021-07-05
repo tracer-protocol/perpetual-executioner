@@ -1,4 +1,10 @@
-const verifySignature = require("@tracer-protocol/tracer-utils").verifySignature
+const {
+  verifySignature,
+  calcPositionAfterTrade,
+  calcTotalMargin,
+  calcMinimumMargin,
+  fromWad
+} = require("@tracer-protocol/tracer-utils")
 const BigNumber = require('bignumber.js')
 
 /**
@@ -103,11 +109,41 @@ const validateExpiryTime = (expiry) => {
   )
 }
 
+const validateMarginAfterTrade = ({ currentPosition, trade, feeRate, maxLeverage } = {}) => {
+  const positionAfterTrade = calcPositionAfterTrade({
+      quote: currentPosition.quote,
+      base: currentPosition.base
+    },
+    {
+        amount: trade.amount,
+        price: trade.price,
+        position: trade.side
+    },
+    feeRate
+  )
+
+  const marginAfterTrade = calcTotalMargin(
+    positionAfterTrade.quote,
+    positionAfterTrade.base,
+    trade.price
+  )
+
+  const minimumMarginAfterTrade = calcMinimumMargin(
+    positionAfterTrade.quote,
+    positionAfterTrade.base,
+    trade.price,
+    maxLeverage
+  )
+
+  return marginAfterTrade.gte(minimumMarginAfterTrade)
+}
+
 module.exports = {
   validateOrder,
   validatePair,
   validateSignature,
   validateWhitelist,
   validateCreatedTime,
-  validateExpiryTime
+  validateExpiryTime,
+  validateMarginAfterTrade
 }

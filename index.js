@@ -12,6 +12,7 @@ let validatePair = require("./orderValidation").validatePair
 let validateWhitelist = require("./orderValidation").validateWhitelist
 let validateCreatedTime = require("./orderValidation").validateCreatedTime
 let validateExpiryTime = require("./orderValidation").validateExpiryTime
+let validateMarginAfterTrade = require("./orderValidation").validateMarginAfterTrade
 
 let submitOrders = require("./orderSubmission").submitOrders
 let OrderStorage = require("./orderStorage").OrderStorage
@@ -129,34 +130,22 @@ app.post('/check', async (req, res) => {
     const maxLeverage = await perpetualSwapContract.methods.maxLeverage().call()
 
     const currentPosition = await perpetualSwapContract.methods.getBalance(contractOrder.order.maker).call()
-    // const positionAfterTrade =
 
-    const positionAfterTrade = accounting.calcPositionAfterTrade({
+    const isValidMarginAfterTrade = validateMarginAfterTrade({
+        currentPosition: {
             quote: accounting.fromWad(currentPosition.position.quote),
             base: accounting.fromWad(currentPosition.position.base)
         },
-        {
+        trade: {
             amount: accounting.fromWad(contractOrder.order.amount),
             price: accounting.fromWad(contractOrder.order.price),
-            position: contractOrder.order.side
+            side: contractOrder.order.side
         },
-        accounting.fromWad(feeRate)
-    )
+        feeRate: accounting.fromWad(feeRate),
+        maxLeverage: accounting.fromWad(maxLeverage)
+    })
 
-    const marginAfterTrade = accounting.calcTotalMargin(
-        positionAfterTrade.quote,
-        positionAfterTrade.base,
-        accounting.fromWad(contractOrder.order.price)
-    )
-
-    const minimumMarginAfterTrade = accounting.calcMinimumMargin(
-        positionAfterTrade.quote,
-        positionAfterTrade.base,
-        accounting.fromWad(contractOrder.order.price),
-        accounting.fromWad(maxLeverage)
-    )
-
-    if(marginAfterTrade.lt(minimumMarginAfterTrade)) {
+    if(!isValidMarginAfterTrade) {
         return res.status(400).send({
             message: 'Account does not have enough margin to perform trade',
             order: contractOrder.order
