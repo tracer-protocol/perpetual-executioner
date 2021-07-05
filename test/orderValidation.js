@@ -1,10 +1,11 @@
 let assert = require('assert');
-const { OrderStorage } = require('../orderStorage');
 const {
   validateCreatedTime,
   validateExpiryTime,
-  validatePair
+  validatePair,
+  validateMarginAfterTrade
 } = require('../orderValidation');
+const { default: BigNumber } = require('bignumber.js')
 require('dotenv').config()
 let Web3 = require('web3');
 let web3 = new Web3(process.env.ETH_URL)
@@ -38,32 +39,32 @@ const sampleAsk = {
 const sampleMarket1 = "0x529da3408a37a91c8154c64f3628db4eaa7b8da2"
 const sampleMarket2 = "0x529da3408a37a91c8154c64f3628db4eaa7b8db3"
 
-context('Validating Pairs', async() => {
-    it('[make is Ask] Is invalid if the prices do not cross', async () => {
+context('Validating Pairs', () => {
+    it('[make is Ask] Is invalid if the prices do not cross',  () => {
       const result = validatePair({ ...sampleAsk, price: 15 }, { ...sampleBid, price: 10 })
 
       assert.strictEqual(false, result)
     })
 
-    it('[make is Bid] Is invalid if the prices do not cross', async () => {
+    it('[make is Bid] Is invalid if the prices do not cross',  () => {
       const result = validatePair({ ...sampleBid, price: 10 }, { ...sampleAsk, price: 15 })
 
       assert.strictEqual(false, result)
     })
 
-    it('[make is Ask] Is valid if the prices do cross', async () => {
+    it('[make is Ask] Is valid if the prices do cross',  () => {
       const result = validatePair(sampleAsk, sampleBid)
 
       assert.strictEqual(true, result)
     })
 
-    it('[make is Bid] Is valid if the prices do cross', async () => {
+    it('[make is Bid] Is valid if the prices do cross',  () => {
       const result = validatePair(sampleBid, sampleAsk)
 
       assert.strictEqual(true, result)
     })
 
-    it('Is invalid if the orders are not on the same market', async () => {
+    it('Is invalid if the orders are not on the same market',  () => {
       const result = validatePair(
         { ...sampleBid, target_tracer: sampleMarket1 },
         { ...sampleAsk, target_tracer: sampleMarket2 }
@@ -73,38 +74,76 @@ context('Validating Pairs', async() => {
     })
 })
 
-context('Validating Created Time', async() => {
-    it('Is invalid if null', async() => {
+context('Validating Created Time', () => {
+    it('Is invalid if null', () => {
       assert.strictEqual(false, validateCreatedTime(null))
     })
 
-    it('Is invalid if NaN', async() => {
+    it('Is invalid if NaN', () => {
       assert.strictEqual(false, validateCreatedTime('this is not a number'))
     })
 
-    it('Is invalid if in the future', async() => {
+    it('Is invalid if in the future', () => {
       assert.strictEqual(false, validateCreatedTime(Date.now() + 100))
     })
 
-    it('Is valid if a number now or in the past', async() => {
+    it('Is valid if a number now or in the past', () => {
       assert.strictEqual(true, validateCreatedTime(Date.now()))
     })
 })
 
-context('Validating Expiry Time', async() => {
-  it('Is invalid if null', async() => {
+context('Validating Expiry Time', () => {
+  it('Is invalid if null', () => {
     assert.strictEqual(false, validateExpiryTime(null))
   })
 
-  it('Is invalid if NaN', async() => {
+  it('Is invalid if NaN', () => {
     assert.strictEqual(false, validateExpiryTime('this is not a number'))
   })
 
-  it('Is invalid if in the past', async() => {
+  it('Is invalid if in the past', () => {
     assert.strictEqual(false, validateExpiryTime(Date.now() - 100))
   })
 
-  it('Is valid if in the future', async() => {
+  it('Is valid if in the future', () => {
     assert.strictEqual(true, validateExpiryTime(Date.now() + 100))
+  })
+})
+
+context('Validating Margin After Trading', () => {
+  it('is valid if the position has sufficient margin after trading', () => {
+    const isValidMarginAfterTrade = validateMarginAfterTrade({
+        currentPosition: {
+            quote: new BigNumber('10000'),
+            base: new BigNumber('1')
+        },
+        trade: {
+            amount: new BigNumber('1'),
+            price: new BigNumber('1000'),
+            side: 1 // sell
+        },
+        feeRate: new BigNumber('0.02'),
+        maxLeverage: new BigNumber('12.5')
+    })
+
+    assert.strictEqual(true, isValidMarginAfterTrade)
+  })
+
+  it('is invalid if the position is under margin after trading', () => {
+    const isValidMarginAfterTrade = validateMarginAfterTrade({
+        currentPosition: {
+            quote: new BigNumber('100'),
+            base: new BigNumber('0')
+        },
+        trade: {
+            amount: new BigNumber('1'),
+            price: new BigNumber('1500'), // 15x
+            side: 1 // buy
+        },
+        feeRate: new BigNumber('0.02'),
+        maxLeverage: new BigNumber('12.5')
+    })
+
+    assert.strictEqual(false, isValidMarginAfterTrade)
   })
 })
