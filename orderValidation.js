@@ -1,4 +1,11 @@
-const verifySignature = require("@tracer-protocol/tracer-utils").verifySignature
+const {
+  verifySignature,
+  calcPositionAfterTrade,
+  calcTotalMargin,
+  calcMinimumMargin,
+  fromWad
+} = require("@tracer-protocol/tracer-utils")
+const BigNumber = require('bignumber.js')
 
 /**
  * Validates a single order to ensure that orders are not transmitted on chain that will fail.
@@ -44,6 +51,22 @@ const validatePair = (make, take) => {
     return false
   }
 
+
+  //Orders must be for same market
+  if (make.target_tracer !== take.target_tracer) {
+    console.log("Order validation: Invalid market in pair")
+    return false
+  }
+
+  // check that the orders cross
+  const askPrice = make.side === 'Ask' ? make.price : take.price
+  const bidPrice = make.side === 'Bid' ? make.price : take.price
+
+  if(!BigNumber(bidPrice).gte(BigNumber(askPrice))) {
+    console.log("Order validation: Prices do not cross")
+    return false
+  }
+
   return true
 }
 
@@ -64,9 +87,63 @@ const validateWhitelist = (web3, address) => {
   return whitelist.includes(web3.utils.toChecksumAddress(address))
 }
 
+/**
+ * Validates if a timestamp is valid and before or equal to now
+ */
+const validateCreatedTime = (created) => {
+  return (
+    created != null &&
+    !isNaN(created) &&
+    Number(created) <= Date.now()
+  )
+}
+
+/**
+ * Validates if a timestamp is valid and after now
+ */
+const validateExpiryTime = (expiry) => {
+  return (
+    expiry != null &&
+    !isNaN(expiry) &&
+    Number(expiry) >= Date.now()
+  )
+}
+
+const validateMarginAfterTrade = ({ currentPosition, trade, feeRate, maxLeverage } = {}) => {
+  const positionAfterTrade = calcPositionAfterTrade({
+      quote: currentPosition.quote,
+      base: currentPosition.base
+    },
+    {
+        amount: trade.amount,
+        price: trade.price,
+        position: trade.side
+    },
+    feeRate
+  )
+
+  const marginAfterTrade = calcTotalMargin(
+    positionAfterTrade.quote,
+    positionAfterTrade.base,
+    trade.price
+  )
+
+  const minimumMarginAfterTrade = calcMinimumMargin(
+    positionAfterTrade.quote,
+    positionAfterTrade.base,
+    trade.price,
+    maxLeverage
+  )
+
+  return marginAfterTrade.gte(minimumMarginAfterTrade)
+}
+
 module.exports = {
   validateOrder,
   validatePair,
   validateSignature,
-  validateWhitelist
+  validateWhitelist,
+  validateCreatedTime,
+  validateExpiryTime,
+  validateMarginAfterTrade
 }
