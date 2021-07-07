@@ -126,7 +126,7 @@ app.post('/check', async (req, res) => {
     const perpetualSwapContract = new web3.eth.Contract(perpetualSwapABI, contractOrder.order.market)
 
     const feeRate = await perpetualSwapContract.methods.feeRate().call()
-    const maxLeverage = await perpetualSwapContract.methods.maxLeverage().call()
+    const trueMaxLeverage = await perpetualSwapContract.methods.trueMaxLeverage().call()
 
     const currentPosition = await perpetualSwapContract.methods.getBalance(contractOrder.order.maker).call()
 
@@ -141,7 +141,7 @@ app.post('/check', async (req, res) => {
             side: contractOrder.order.side
         },
         feeRate: accounting.fromWad(feeRate),
-        maxLeverage: accounting.fromWad(maxLeverage)
+        maxLeverage: accounting.fromWad(trueMaxLeverage)
     })
 
     if(!isValidMarginAfterTrade) {
