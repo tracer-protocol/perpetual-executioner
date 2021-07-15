@@ -94,7 +94,7 @@ const validateCreatedTime = (created) => {
   return (
     created != null &&
     !isNaN(created) &&
-    Number(created) <= Date.now()
+    Number(created) <= parseInt(Date.now() / 1000)
   )
 }
 
@@ -105,7 +105,7 @@ const validateExpiryTime = (expiry) => {
   return (
     expiry != null &&
     !isNaN(expiry) &&
-    Number(expiry) >= Date.now()
+    Number(expiry) >= parseInt(Date.now() / 1000)
   )
 }
 
