@@ -84,11 +84,11 @@ context('Validating Created Time', () => {
     })
 
     it('Is invalid if in the future', () => {
-      assert.strictEqual(false, validateCreatedTime(Date.now() + 100))
+      assert.strictEqual(false, validateCreatedTime(parseInt(Date.now() / 1000) + 100))
     })
 
     it('Is valid if a number now or in the past', () => {
-      assert.strictEqual(true, validateCreatedTime(Date.now()))
+      assert.strictEqual(true, validateCreatedTime(parseInt(Date.now() / 1000)))
     })
 })
 
@@ -102,11 +102,11 @@ context('Validating Expiry Time', () => {
   })
 
   it('Is invalid if in the past', () => {
-    assert.strictEqual(false, validateExpiryTime(Date.now() - 100))
+    assert.strictEqual(false, validateExpiryTime(parseInt(Date.now() / 1000) - 100))
   })
 
   it('Is valid if in the future', () => {
-    assert.strictEqual(true, validateExpiryTime(Date.now() + 100))
+    assert.strictEqual(true, validateExpiryTime(parseInt(Date.now() / 1000) + 100))
   })
 })
 
