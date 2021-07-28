@@ -3,7 +3,7 @@ const {
   calcPositionAfterTrade,
   calcTotalMargin,
   calcMinimumMargin,
-  fromWad
+  API_CODES
 } = require("@tracer-protocol/tracer-utils")
 const BigNumber = require('bignumber.js')
 
@@ -42,20 +42,19 @@ const validatePair = (make, take) => {
   //Orders are same side, not valid
   if (make.side === take.side) {
     console.log("Order validation: Invalid value for side in pair")
-    return false
+    return {
+      message: API_CODES.ORDERS_SAME_SIDE,
+      isValid: false
+    }
   }
 
   //Orders must be for same market
   if (make.target_tracer !== take.target_tracer) {
     console.log("Order validation: Invalid market in pair")
-    return false
-  }
-
-
-  //Orders must be for same market
-  if (make.target_tracer !== take.target_tracer) {
-    console.log("Order validation: Invalid market in pair")
-    return false
+    return {
+      message: API_CODES.MARKET_MISMATCH,
+      isValid: false
+    }
   }
 
   // check that the orders cross
@@ -64,10 +63,16 @@ const validatePair = (make, take) => {
 
   if(!BigNumber(bidPrice).gte(BigNumber(askPrice))) {
     console.log("Order validation: Prices do not cross")
-    return false
+    return {
+      message: API_CODES.PRICE_NOT_CROSSED,
+      isValid: false
+    }
   }
 
-  return true
+  return {
+    message: 'Pair is valid',
+    isValid: true
+  }
 }
 
 /**

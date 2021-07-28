@@ -15,8 +15,7 @@ let validateMarginAfterTrade = require("./orderValidation").validateMarginAfterT
 
 let submitOrders = require("./orderSubmission").submitOrders
 let OrderStorage = require("./orderStorage").OrderStorage
-let omeOrderToOrder = require("@tracer-protocol/tracer-utils").omeOrderToOrder;
-const { default: BigNumber } = require('bignumber.js');
+const { omeOrderToOrder, API_CODES } = require('@tracer-protocol/tracer-utils');
 
 // Create a new express app instance
 const app = express();
@@ -40,10 +39,29 @@ app.post('/submit', async (req, res) => {
     let numOrders = orderStorage.getOrderCounter(req.body.maker.target_tracer)
     console.log(`Received Orders. Pending orders to process: ${numOrders}`)
     //Validate orders
-    if (!req.body.maker || !req.body.taker ||
-        (!validateOrder(req.body.maker) || !validateOrder(req.body.taker) ||
-            !validatePair(req.body.maker, req.body.taker))) {
-        return res.status(500).send({ error: "Invalid Orders" })
+    if(!req.body.maker || !validateOrder(req.body.maker)) {
+        return res.status(400).send({
+            message: API_CODES.INVALID_MAKER,
+            data: req.body.maker
+        })
+    }
+
+    if(!req.body.taker || !validateOrder(req.body.taker)) {
+        return res.status(400).send({
+            message: API_CODES.INVALID_TAKER,
+            data: req.body.taker
+        })
+    }
+
+    const pairValidation = validatePair(req.body.maker, req.body.taker);
+    if(!pairValidation.isValid) {
+        return res.status(400).send({
+            message: pairValidation.message,
+            data: {
+                maker: req.body.maker,
+                taker: req.body.taker,
+            }
+        })
     }
 
     // //add the order to the order heap for this market
@@ -92,15 +110,15 @@ app.post('/check', async (req, res) => {
     const isValidSig = validateSignature(contractOrder.order, process.env.TRADER_CONTRACT, network, signature)
     if(!isValidSig) {
         return res.status(400).send({
-            message: 'Invalid signature, ensure the correct Trading Contract is being used',
+            message: API_CODES.INVALID_SIGNATURE,
             order: contractOrder.order
         });
     }
 
     const isWhitelisted = validateWhitelist(web3, contractOrder.order.maker)
     if(!isWhitelisted) {
-        return res.status(400).send({
-            message: 'Address not whitelisted for trading',
+        return res.status(403).send({
+            message: API_CODES.NOT_WHITELISTED,
             order: contractOrder.order
         });
     }
@@ -109,7 +127,7 @@ app.post('/check', async (req, res) => {
     const isValidCreatedTime = validateCreatedTime(contractOrder.order.created)
     if(!isValidCreatedTime) {
         return res.status(400).send({
-            message: 'Order created time is invalid',
+            message: API_CODES.INVALID_CREATED_TIMESTAMP,
             order: contractOrder.order
         });
     }
@@ -117,7 +135,7 @@ app.post('/check', async (req, res) => {
     const isValidExpiryTime = validateExpiryTime(contractOrder.order.expires)
     if(!isValidExpiryTime) {
         return res.status(400).send({
-            message: 'Order expiry time is invalid',
+            message: API_CODES.INVALID_EXPIRY_TIMESTAMP,
             order: contractOrder.order
         });
     }
@@ -146,7 +164,7 @@ app.post('/check', async (req, res) => {
 
     if(!isValidMarginAfterTrade) {
         return res.status(400).send({
-            message: 'Account does not have enough margin to perform trade',
+            message: API_CODES.UNDER_MARGIN,
             order: contractOrder.order
         })
     }

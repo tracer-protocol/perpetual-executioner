@@ -8,6 +8,7 @@ const {
 const { default: BigNumber } = require('bignumber.js')
 require('dotenv').config()
 let Web3 = require('web3');
+const { API_CODES } = require('@tracer-protocol/tracer-utils');
 let web3 = new Web3(process.env.ETH_URL)
 
 //EIP712 Signature Example
@@ -40,37 +41,52 @@ const sampleMarket1 = "0x529da3408a37a91c8154c64f3628db4eaa7b8da2"
 const sampleMarket2 = "0x529da3408a37a91c8154c64f3628db4eaa7b8db3"
 
 context('Validating Pairs', () => {
-    it('[make is Ask] Is invalid if the prices do not cross',  () => {
+    it('[make is Ask] Is invalid if the prices do not cross', () => {
       const result = validatePair({ ...sampleAsk, price: 15 }, { ...sampleBid, price: 10 })
 
-      assert.strictEqual(false, result)
+      assert.deepEqual(result, {
+        message: API_CODES.PRICE_NOT_CROSSED,
+        isValid: false,
+      })
     })
 
-    it('[make is Bid] Is invalid if the prices do not cross',  () => {
+    it('[make is Bid] Is invalid if the prices do not cross', () => {
       const result = validatePair({ ...sampleBid, price: 10 }, { ...sampleAsk, price: 15 })
 
-      assert.strictEqual(false, result)
+      assert.deepEqual(result, {
+        message: API_CODES.PRICE_NOT_CROSSED,
+        isValid: false,
+      })
     })
 
-    it('[make is Ask] Is valid if the prices do cross',  () => {
+    it('[make is Ask] Is valid if the prices do cross', () => {
       const result = validatePair(sampleAsk, sampleBid)
 
-      assert.strictEqual(true, result)
+      assert.deepEqual(result, {
+        message: 'Pair is valid',
+        isValid: true,
+      })
     })
 
-    it('[make is Bid] Is valid if the prices do cross',  () => {
+    it('[make is Bid] Is valid if the prices do cross', () => {
       const result = validatePair(sampleBid, sampleAsk)
 
-      assert.strictEqual(true, result)
+      assert.deepEqual(result, {
+        message: 'Pair is valid',
+        isValid: true,
+      })
     })
 
-    it('Is invalid if the orders are not on the same market',  () => {
+    it('Is invalid if the orders are not on the same market', () => {
       const result = validatePair(
         { ...sampleBid, target_tracer: sampleMarket1 },
         { ...sampleAsk, target_tracer: sampleMarket2 }
       )
 
-      assert.strictEqual(false, result)
+      assert.deepEqual(result, {
+        message: API_CODES.MARKET_MISMATCH,
+        isValid: false,
+      })
     })
 })
 
