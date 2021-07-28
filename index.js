@@ -202,7 +202,14 @@ app.get('/pending-orders/:market', (req, res) => {
 //Start up the server
 app.listen(3000, async () => {
     web3 = await new Web3(process.env.ETH_URL)
-    console.log(`Connected to RPC ${process.env.ETH_URL}`)
+    console.log(`
+        Starting executioner\n
+        Connected to RPC: ${process.env.ETH_URL}\n
+        Trader Address: ${process.env.TRADER_CONTRACT}\n
+        GAS_LIMIT: ${process.env.GAS_LIMIT}\n
+        BATCH_SIZE: ${process.env.BATCH_SIZE}\n
+        NETWORK_ID: ${process.env.NETWORK_ID}\n
+    `)
     //Setup signing account
     const account = web3.eth.accounts.privateKeyToAccount(process.env.PRIVATE_KEY);
     web3.eth.accounts.wallet.add(account);
