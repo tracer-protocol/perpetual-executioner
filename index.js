@@ -9,7 +9,6 @@ let bodyParser = require('body-parser')
 let validateOrder = require("./orderValidation").validateOrder
 let validateSignature = require("./orderValidation").validateSignature
 let validatePair = require("./orderValidation").validatePair
-let validateWhitelist = require("./orderValidation").validateWhitelist
 let validateCreatedTime = require("./orderValidation").validateCreatedTime
 let validateExpiryTime = require("./orderValidation").validateExpiryTime
 let validateMarginAfterTrade = require("./orderValidation").validateMarginAfterTrade
@@ -112,14 +111,6 @@ app.post('/check', async (req, res) => {
     if(!isValidSig) {
         return res.status(400).send({
             message: API_CODES.INVALID_SIGNATURE,
-            order: contractOrder.order
-        });
-    }
-
-    const isWhitelisted = validateWhitelist(web3, contractOrder.order.maker)
-    if(!isWhitelisted) {
-        return res.status(403).send({
-            message: API_CODES.NOT_WHITELISTED,
             order: contractOrder.order
         });
     }

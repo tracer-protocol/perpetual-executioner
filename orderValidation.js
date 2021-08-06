@@ -83,16 +83,6 @@ const validateSignature = (order, trader, network, sig) => {
 }
 
 /**
- * Validates if an address is whitelisted to trade
- */
-const validateWhitelist = (web3, address) => {
-  // whitelist is passed in as a csv string
-  let whitelist = process.env.WHITELIST.split(",")
-  whitelist = whitelist.map((_address) => web3.utils.toChecksumAddress(_address))
-  return whitelist.includes(web3.utils.toChecksumAddress(address))
-}
-
-/**
  * Validates if a timestamp is valid and before or equal to now
  */
 const validateCreatedTime = (created) => {
@@ -147,7 +137,6 @@ module.exports = {
   validateOrder,
   validatePair,
   validateSignature,
-  validateWhitelist,
   validateCreatedTime,
   validateExpiryTime,
   validateMarginAfterTrade
