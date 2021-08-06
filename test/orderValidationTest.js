@@ -16,7 +16,7 @@ let exampleSignatureRaw = "0x790638318b21ec73c6ac6cf5596d32bfe63928bd2fe6793e969
 const sampleBid = {
     "id": 0,
     "address": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
-    "market": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
+    "target_tracer": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
     "side": "Bid",
     "price": 12,
     "amount": 5,
@@ -28,7 +28,7 @@ const sampleBid = {
 const sampleAsk = {
     "id": 0,
     "address": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
-    "market": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
+    "target_tracer": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
     "side": "Ask",
     "price": 12,
     "amount": 5,
@@ -127,7 +127,7 @@ context('Validating Expiry Time', () => {
 })
 
 context('Validating Margin After Trading', () => {
-  it('is valid if the position has sufficient margin after trading', () => {
+  it('is valid if the position has not borrowed anything', () => {
     const isValidMarginAfterTrade = validateMarginAfterTrade({
         currentPosition: {
             quote: new BigNumber('10000'),
@@ -136,16 +136,74 @@ context('Validating Margin After Trading', () => {
         trade: {
             amount: new BigNumber('1'),
             price: new BigNumber('1000'),
-            side: 1 // sell
+            side: 0 // buy
         },
         feeRate: new BigNumber('0.02'),
-        maxLeverage: new BigNumber('12.5')
+        maxLeverage: new BigNumber('12.5'),
+        fairPrice: new BigNumber('1000')
     })
 
     assert.strictEqual(true, isValidMarginAfterTrade)
   })
 
-  it('is invalid if the position is under margin after trading', () => {
+  it('is valid if the position has borrowed quote asset but is still over margin', () => {
+    const isValidMarginAfterTrade = validateMarginAfterTrade({
+        currentPosition: {
+            quote: new BigNumber('100'),
+            base: new BigNumber('0')
+        },
+        trade: {
+            amount: new BigNumber('1'),
+            price: new BigNumber('800'),
+            side: 0 // buy
+        },
+        feeRate: new BigNumber('0.02'),
+        maxLeverage: new BigNumber('12.5'),
+        fairPrice: new BigNumber('800')
+    })
+
+    assert.strictEqual(true, isValidMarginAfterTrade)
+  })
+
+  it('is valid if the position has borrowed base asset but is still over margin', () => {
+    const isValidMarginAfterTrade = validateMarginAfterTrade({
+        currentPosition: {
+            quote: new BigNumber('100'),
+            base: new BigNumber('0')
+        },
+        trade: {
+            amount: new BigNumber('1'),
+            price: new BigNumber('800'),
+            side: 1 // sell
+        },
+        feeRate: new BigNumber('0.02'),
+        maxLeverage: new BigNumber('12.5'),
+        fairPrice: new BigNumber('800')
+    })
+
+    assert.strictEqual(true, isValidMarginAfterTrade)
+  })
+
+  it('is invalid if the position has borrowed quote asset and is under margin', () => {
+    const isValidMarginAfterTrade = validateMarginAfterTrade({
+        currentPosition: {
+            quote: new BigNumber('100'),
+            base: new BigNumber('0')
+        },
+        trade: {
+            amount: new BigNumber('15'),
+            price: new BigNumber('100'),
+            side: 0 // buy
+        },
+        feeRate: new BigNumber('0.02'),
+        maxLeverage: new BigNumber('12.5'),
+        fairPrice: new BigNumber('100')
+    })
+
+    assert.strictEqual(false, isValidMarginAfterTrade)
+  })
+
+  it('is invalid if the position has borrowed base asset is under margin after trading', () => {
     const isValidMarginAfterTrade = validateMarginAfterTrade({
         currentPosition: {
             quote: new BigNumber('100'),
@@ -154,10 +212,30 @@ context('Validating Margin After Trading', () => {
         trade: {
             amount: new BigNumber('1'),
             price: new BigNumber('1500'), // 15x
-            side: 1 // buy
+            side: 1 // sell
         },
         feeRate: new BigNumber('0.02'),
-        maxLeverage: new BigNumber('12.5')
+        maxLeverage: new BigNumber('12.5'),
+        fairPrice: new BigNumber('1500')
+    })
+
+    assert.strictEqual(false, isValidMarginAfterTrade)
+  })
+
+  it('is invalid if the position has borrowed funds and the fair price is much higher than execution price', () => {
+    const isValidMarginAfterTrade = validateMarginAfterTrade({
+        currentPosition: {
+            quote: new BigNumber('500'),
+            base: new BigNumber('0')
+        },
+        trade: {
+            amount: new BigNumber('10'),
+            price: new BigNumber('100'),
+            side: 1 // sell
+        },
+        feeRate: new BigNumber('0.02'),
+        maxLeverage: new BigNumber('12.5'),
+        fairPrice: new BigNumber('150')
     })
 
     assert.strictEqual(false, isValidMarginAfterTrade)

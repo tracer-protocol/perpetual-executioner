@@ -4,6 +4,7 @@ let Web3 = require('web3');
 const accounting = require('@tracer-protocol/tracer-utils')
 let traderABI = require('./contracts/Trader.json')
 let perpetualSwapABI = require('@tracer-protocol/contracts/abi/contracts/TracerPerpetualSwaps.sol/TracerPerpetualSwaps.json')
+let pricingABI = require('@tracer-protocol/contracts/abi/contracts/Pricing.sol/Pricing.json')
 let bodyParser = require('body-parser')
 let validateOrder = require("./orderValidation").validateOrder
 let validateSignature = require("./orderValidation").validateSignature
@@ -145,6 +146,10 @@ app.post('/check', async (req, res) => {
 
     const feeRate = await perpetualSwapContract.methods.feeRate().call()
     const trueMaxLeverage = await perpetualSwapContract.methods.trueMaxLeverage().call()
+    const pricingContractAddress = await perpetualSwapContract.methods.pricingContract().call()
+
+    const pricingContract = new web3.eth.Contract(pricingABI, pricingContractAddress)
+    const fairPrice = await pricingContract.methods.fairPrice().call()
 
     const currentPosition = await perpetualSwapContract.methods.getBalance(contractOrder.order.maker).call()
 
@@ -159,7 +164,8 @@ app.post('/check', async (req, res) => {
             side: contractOrder.order.side
         },
         feeRate: accounting.fromWad(feeRate),
-        maxLeverage: accounting.fromWad(trueMaxLeverage)
+        maxLeverage: accounting.fromWad(trueMaxLeverage),
+        fairPrice: accounting.fromWad(fairPrice)
     })
 
     if(!isValidMarginAfterTrade) {

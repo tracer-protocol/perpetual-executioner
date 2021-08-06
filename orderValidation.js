@@ -49,8 +49,8 @@ const validatePair = (make, take) => {
   }
 
   //Orders must be for same market
-  if (make.target_tracer !== take.target_tracer) {
-    console.log("Order validation: Invalid market in pair")
+  if (make.target_tracer.toLowerCase() !== take.target_tracer.toLowerCase()) {
+    console.log(`Order validation: Invalid market in pair - maker ${make.target_tracer} and taker ${take.target_tracer}`)
     return {
       message: API_CODES.MARKET_MISMATCH,
       isValid: false
@@ -114,7 +114,7 @@ const validateExpiryTime = (expiry) => {
   )
 }
 
-const validateMarginAfterTrade = ({ currentPosition, trade, feeRate, maxLeverage } = {}) => {
+const validateMarginAfterTrade = ({ currentPosition, trade, feeRate, maxLeverage, fairPrice } = {}) => {
   const positionAfterTrade = calcPositionAfterTrade({
       quote: currentPosition.quote,
       base: currentPosition.base
@@ -130,13 +130,13 @@ const validateMarginAfterTrade = ({ currentPosition, trade, feeRate, maxLeverage
   const marginAfterTrade = calcTotalMargin(
     positionAfterTrade.quote,
     positionAfterTrade.base,
-    trade.price
+    fairPrice
   )
 
   const minimumMarginAfterTrade = calcMinimumMargin(
     positionAfterTrade.quote,
     positionAfterTrade.base,
-    trade.price,
+    fairPrice,
     maxLeverage
   )
 
