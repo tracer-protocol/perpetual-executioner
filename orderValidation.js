@@ -49,8 +49,8 @@ const validatePair = (make, take) => {
   }
 
   //Orders must be for same market
-  if (make.target_tracer !== take.target_tracer) {
-    console.log("Order validation: Invalid market in pair")
+  if (make.target_tracer.toLowerCase() !== take.target_tracer.toLowerCase()) {
+    console.log(`Order validation: Invalid market in pair - maker ${make.target_tracer} and taker ${take.target_tracer}`)
     return {
       message: API_CODES.MARKET_MISMATCH,
       isValid: false
@@ -83,16 +83,6 @@ const validateSignature = (order, trader, network, sig) => {
 }
 
 /**
- * Validates if an address is whitelisted to trade
- */
-const validateWhitelist = (web3, address) => {
-  // whitelist is passed in as a csv string
-  let whitelist = process.env.WHITELIST.split(",")
-  whitelist = whitelist.map((_address) => web3.utils.toChecksumAddress(_address))
-  return whitelist.includes(web3.utils.toChecksumAddress(address))
-}
-
-/**
  * Validates if a timestamp is valid and before or equal to now
  */
 const validateCreatedTime = (created) => {
@@ -114,7 +104,7 @@ const validateExpiryTime = (expiry) => {
   )
 }
 
-const validateMarginAfterTrade = ({ currentPosition, trade, feeRate, maxLeverage } = {}) => {
+const validateMarginAfterTrade = ({ currentPosition, trade, feeRate, maxLeverage, fairPrice } = {}) => {
   const positionAfterTrade = calcPositionAfterTrade({
       quote: currentPosition.quote,
       base: currentPosition.base
@@ -130,13 +120,13 @@ const validateMarginAfterTrade = ({ currentPosition, trade, feeRate, maxLeverage
   const marginAfterTrade = calcTotalMargin(
     positionAfterTrade.quote,
     positionAfterTrade.base,
-    trade.price
+    fairPrice
   )
 
   const minimumMarginAfterTrade = calcMinimumMargin(
     positionAfterTrade.quote,
     positionAfterTrade.base,
-    trade.price,
+    fairPrice,
     maxLeverage
   )
 
@@ -147,7 +137,6 @@ module.exports = {
   validateOrder,
   validatePair,
   validateSignature,
-  validateWhitelist,
   validateCreatedTime,
   validateExpiryTime,
   validateMarginAfterTrade
