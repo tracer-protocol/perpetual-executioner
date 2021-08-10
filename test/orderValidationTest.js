@@ -3,7 +3,8 @@ const {
   validateCreatedTime,
   validateExpiryTime,
   validatePair,
-  validateMarginAfterTrade
+  validateMarginAfterTrade,
+  validateOrder
 } = require('../orderValidation');
 const { default: BigNumber } = require('bignumber.js')
 require('dotenv').config()
@@ -15,25 +16,25 @@ let web3 = new Web3(process.env.ETH_URL)
 let exampleSignatureRaw = "0x790638318b21ec73c6ac6cf5596d32bfe63928bd2fe6793e969c300e6039507235ff44e018faec98c43ec61d1919242dd11979a4692cb162571df703135e18fc1b"
 const sampleBid = {
     "id": 0,
-    "address": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
+    "user": "0x529da3408a37a91c8154c64f3628db4eaa7b8da3",
     "target_tracer": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
     "side": "Bid",
     "price": 12,
     "amount": 5,
-    "expiration": 1596600983,
-    "flags": { "bits": 1 },
+    "expiration": parseInt(Date.now() / 1000) + 1000,
+    "created": parseInt(Date.now() / 1000),
     "signed_data": web3.utils.hexToBytes(exampleSignatureRaw),
 }
 
 const sampleAsk = {
     "id": 0,
-    "address": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
+    "user": "0x529da3408a37a91c8154c64f3628db4eaa7b8da3",
     "target_tracer": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
     "side": "Ask",
     "price": 12,
     "amount": 5,
-    "expiration": 1596600983,
-    "flags": { "bits": 1 },
+    "expiration": parseInt(Date.now() / 1000) + 1000,
+    "created": parseInt(Date.now() / 1000),
     "signed_data": web3.utils.hexToBytes(exampleSignatureRaw),
 }
 
@@ -123,6 +124,71 @@ context('Validating Expiry Time', () => {
 
   it('Is valid if in the future', () => {
     assert.strictEqual(true, validateExpiryTime(parseInt(Date.now() / 1000) + 100))
+  })
+})
+
+context('Validating Order', () => {
+  context('missing fields', () => {
+    const fieldsToTest = [
+      'user',
+      'target_tracer',
+      'side',
+      'price',
+      'amount',
+      'expiration',
+      'signed_data'
+    ]
+
+    for(const field of fieldsToTest) {
+      it(`invalid if missing ${field}`, () => {
+        const result = validateOrder({
+          ...sampleAsk,
+          [field]: undefined
+        })
+
+        assert.deepEqual(result, {
+          isValid: false,
+          message: `missing the following fields: ${field}`
+        })
+      })
+    }
+  })
+
+  it('invalid if missing multiple fields', () => {
+    const result = validateOrder({
+      ...sampleAsk,
+      user: undefined,
+      target_tracer: undefined
+    })
+
+    assert.deepEqual(result, {
+      isValid: false,
+      message: 'missing the following fields: user, target_tracer'
+    })
+  })
+
+  it('invalid if side is not "Bid" or "Ask"', () => {
+    const result = validateOrder({
+      ...sampleAsk,
+      side: 'Wrong'
+    })
+
+    assert.deepEqual(result, {
+      isValid: false,
+      message: 'invalid side: Wrong'
+    })
+  })
+
+  it('invalid if order is past expiry', () => {
+    const result = validateOrder({
+      ...sampleAsk,
+      expiration: parseInt(Date.now() / 1000) - 1000
+    })
+
+    assert.deepEqual(result, {
+      isValid: false,
+      message: API_CODES.INVALID_EXPIRY_TIMESTAMP
+    })
   })
 })
 
