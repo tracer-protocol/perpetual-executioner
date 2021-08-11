@@ -15,7 +15,8 @@ const sampleOrder1 = {
     "side": "Bid",
     "price": 12,
     "amount": 5,
-    "expiration": 1596600983,
+    "expiration": parseInt(Date.now() / 1000) + 1000,
+    "created": parseInt(Date.now() / 1000),
     "signed_data": web3.utils.hexToBytes(exampleSignatureRaw),
 }
 
@@ -26,7 +27,8 @@ const sampleOrder2 = {
     "side": "Ask",
     "price": 12,
     "amount": 5,
-    "expiration": 1596600983,
+    "expiration": parseInt(Date.now() / 1000) + 1000,
+    "created": parseInt(Date.now() / 1000),
     "signed_data": web3.utils.hexToBytes(exampleSignatureRaw),
 }
 

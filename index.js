@@ -39,17 +39,28 @@ app.post('/submit', async (req, res) => {
     let numOrders = orderStorage.getOrderCounter(req.body.maker.target_tracer)
     console.log(`Received Orders. Pending orders to process: ${numOrders}`)
     //Validate orders
-    if(!req.body.maker || !validateOrder(req.body.maker)) {
+
+    const makerValidation = validateOrder(req.body.maker);
+
+    if(!makerValidation.isValid) {
         return res.status(400).send({
-            message: API_CODES.INVALID_MAKER,
-            data: req.body.maker
+            message: API_CODES.INVALID_TAKER,
+            data: {
+                reason: makerValidation.message,
+                maker: req.body.maker
+            }
         })
     }
 
-    if(!req.body.taker || !validateOrder(req.body.taker)) {
+    const takerValidation = validateOrder(req.body.taker);
+
+    if(!takerValidation.isValid) {
         return res.status(400).send({
             message: API_CODES.INVALID_TAKER,
-            data: req.body.taker
+            data: {
+                reason: takerValidation.message,
+                taker: req.body.taker
+            }
         })
     }
 
@@ -136,10 +147,13 @@ app.post('/check', async (req, res) => {
     const perpetualSwapContract = new web3.eth.Contract(perpetualSwapABI, contractOrder.order.market)
 
     const feeRate = await perpetualSwapContract.methods.feeRate().call()
+
     const trueMaxLeverage = await perpetualSwapContract.methods.trueMaxLeverage().call()
+
     const pricingContractAddress = await perpetualSwapContract.methods.pricingContract().call()
 
     const pricingContract = new web3.eth.Contract(pricingABI, pricingContractAddress)
+
     const fairPrice = await pricingContract.methods.fairPrice().call()
 
     const currentPosition = await perpetualSwapContract.methods.getBalance(contractOrder.order.maker).call()

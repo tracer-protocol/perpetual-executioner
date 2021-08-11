@@ -11,26 +11,45 @@ const BigNumber = require('bignumber.js')
  * Validates a single order to ensure that orders are not transmitted on chain that will fail.
  */
 const validateOrder = (order) => {
-  //Require all fields
-  if (order.user === undefined ||
-    order.target_tracer === undefined ||
-    order.side === undefined ||
-    order.price === undefined ||
-    order.amount === undefined ||
-    order.expiration === undefined ||
-    order.signed_data === undefined) {
-    console.log("Order Validation: Invalid field in order")
-    return false
+  if(!order) {
+    return { isValid: false, message: 'order not supplied' };
   }
 
-  //Side must be ask or bid
+  const requiredFields = [
+    'user',
+    'target_tracer',
+    'side',
+    'price',
+    'amount',
+    'expiration',
+    'signed_data'
+  ];
+
+  let missingFields = [];
+
+  for(const fieldName of requiredFields) {
+    if(!order[fieldName]) {
+      missingFields.push(fieldName);
+    }
+  }
+
+  if(missingFields.length) {
+    return { isValid: false, message: `missing the following fields: ${missingFields.join(', ')}` };
+  }
+
+  // validate specific fields
   if (order.side !== "Ask" && order.side !== "Bid") {
-    console.log(order.side)
-    console.log("Order Validation: Invalid value for side in order")
-    return false
+    return { isValid: false, message: `invalid side: ${order.side}` };
   }
 
-  return true
+  // check order expiry
+  const isValidExpiryTime = validateExpiryTime(order.expiration);
+
+  if(!isValidExpiryTime) {
+    return { isValid: false, message: API_CODES.INVALID_EXPIRY_TIMESTAMP };
+  }
+
+  return { isValid: true, message: 'order is valid' };
 }
 
 /**
