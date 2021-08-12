@@ -8,7 +8,7 @@ const { expect } = require('chai')
 
 const batchSize = 2
 const batchInterval = 5000
-const maxRetries = 2
+const maxAttempts = 2
 
 let clock = sinon.useFakeTimers()
 
@@ -50,7 +50,7 @@ context('Order Batching', () => {
       const mockGasLimit = 'mockGasLimit'
       const mockSender = 'mockSender'
 
-      orderBatcher.startSubmittingMatches(mockContract, mockGasLimit, mockSender, maxRetries)
+      orderBatcher.startSubmittingMatches(mockContract, mockGasLimit, mockSender, maxAttempts)
       await clock.tickAsync(5000)
 
       const pendingOrders = orderBatcher.getPendingOrdersForMarket(sampleAsk.target_tracer)
@@ -71,7 +71,7 @@ context('Order Batching', () => {
       ])
   })
 
-  it('Retries up to the maxRetries and then abandons batch', async() => {
+  it('Attempts up to the maxAttempts and then abandons batch', async() => {
     // force submission to fail
     submitOrdersStub.restore()
     submitOrdersStub = sinon.stub(orderSubmission, 'submitOrders').rejects()
@@ -81,7 +81,7 @@ context('Order Batching', () => {
     const mockGasLimit = 'mockGasLimit'
     const mockSender = 'mockSender'
 
-    orderBatcher.startSubmittingMatches(mockContract, mockGasLimit, mockSender, maxRetries)
+    orderBatcher.startSubmittingMatches(mockContract, mockGasLimit, mockSender, maxAttempts)
     await clock.tickAsync(5000)
 
     const pendingOrders = orderBatcher.getPendingOrdersForMarket(sampleAsk.target_tracer)
@@ -92,8 +92,8 @@ context('Order Batching', () => {
       takeOrders: []
     })
 
-    expect(submitOrdersStub.callCount).eql(maxRetries)
-    const expectedSubmissionAttempts = Array(maxRetries).fill([
+    expect(submitOrdersStub.callCount).eql(maxAttempts)
+    const expectedSubmissionAttempts = Array(maxAttempts).fill([
       [sampleAsk],
       [sampleBid],
       mockContract,

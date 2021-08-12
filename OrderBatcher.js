@@ -105,7 +105,7 @@ class OrderBatcher {
         Starting Match Submission\n
         batchInterval: ${this.batchInterval}\n
         batchSize: ${this.batchSize}\n
-        maxRetries: ${maxAttempts}\n
+        maxAttempts: ${maxAttempts}\n
     `)
     if(!this.isSubmitting) {
       this.isSubmitting = true
