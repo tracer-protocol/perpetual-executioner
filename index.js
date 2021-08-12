@@ -187,7 +187,7 @@ app.listen(3000, async () => {
     traderContract = new web3.eth.Contract(traderABI, process.env.TRADER_CONTRACT)
 
     // begin processing matched orders
-    const maxRetries = process.env.MATCH_SUBMISSION_RETRIES || 2
+    const maxRetries = process.env.MATCH_SUBMISSION_RETRIES ? Number(process.env.MATCH_SUBMISSION_RETRIES) : 2
     orderBatcher.startSubmittingMatches(traderContract, process.env.GAS_LIMIT, web3.eth.defaultAccount, maxRetries)
 
     console.log("Execute order 66")

@@ -47,7 +47,7 @@ class OrderBatcher {
         } catch (error) {
           console.log(`ERROR SUBMITTING BATCH (ATTEMPT ${nextBatch.attempts})`, error.message, JSON.stringify(nextBatch, null, 2))
           // if there are still attempts left
-          if(nextBatch.attempts < maxAttempts) {
+          if(nextBatch.attempts <= maxAttempts) {
             // add it back to the start of the queue for retrying
             this.processingQueue.unshift(nextBatch);
           } else {
@@ -96,8 +96,8 @@ class OrderBatcher {
   }
 
   addMatch (pair) {
-    this.batcher.add(pair)
     this.pendingQueue.push(pair)
+    this.batcher.add(pair)
   }
 
   startSubmittingMatches = (contract, gasLimit, sender, maxAttempts) => {
