@@ -1,30 +1,27 @@
 require('dotenv').config()
-let express = require("express")
-let Web3 = require('web3');
-const accounting = require('@tracer-protocol/tracer-utils')
-let traderABI = require('./contracts/Trader.json')
-let perpetualSwapABI = require('@tracer-protocol/contracts/abi/contracts/TracerPerpetualSwaps.sol/TracerPerpetualSwaps.json')
-let pricingABI = require('@tracer-protocol/contracts/abi/contracts/Pricing.sol/Pricing.json')
-let bodyParser = require('body-parser')
-let validateOrder = require("./orderValidation").validateOrder
-let validateSignature = require("./orderValidation").validateSignature
-let validatePair = require("./orderValidation").validatePair
-let validateCreatedTime = require("./orderValidation").validateCreatedTime
-let validateExpiryTime = require("./orderValidation").validateExpiryTime
-let validateMarginAfterTrade = require("./orderValidation").validateMarginAfterTrade
+const express = require("express")
+const Web3 = require('web3');
+const { omeOrderToOrder, fromWad, API_CODES } = require('@tracer-protocol/tracer-utils');
+const traderABI = require('./contracts/Trader.json')
+const perpetualSwapABI = require('@tracer-protocol/contracts/abi/contracts/TracerPerpetualSwaps.sol/TracerPerpetualSwaps.json')
+const pricingABI = require('@tracer-protocol/contracts/abi/contracts/Pricing.sol/Pricing.json')
+const bodyParser = require('body-parser')
+const {
+    validateOrder,
+    validateSignature,
+    validatePair,
+    validateCreatedTime,
+    validateExpiryTime,
+    validateMarginAfterTrade,
+} = require('./orderValidation')
 
-let submitOrders = require("./orderSubmission").submitOrders
-let OrderStorage = require("./orderStorage").OrderStorage
-const { omeOrderToOrder, API_CODES } = require('@tracer-protocol/tracer-utils');
+const orderBatcher = require('./orderBatcherSingleton')
 
 // Create a new express app instance
 const app = express();
 app.use(bodyParser.json())
 let web3
 let traderContract;
-
-//Orders are kept in memory and executed in batches of 100
-let orderStorage = new OrderStorage()
 
 //Routes
 app.get('/', (req, res) => {
@@ -36,8 +33,6 @@ app.get('/', (req, res) => {
  * once the minimum number of orders (as given by the BATCH_SIZE env variable) is met.
  */
 app.post('/submit', async (req, res) => {
-    let numOrders = orderStorage.getOrderCounter(req.body.maker.target_tracer)
-    console.log(`Received Orders. Pending orders to process: ${numOrders}`)
     //Validate orders
 
     const makerValidation = validateOrder(req.body.maker);
@@ -75,27 +70,7 @@ app.post('/submit', async (req, res) => {
         })
     }
 
-    // //add the order to the order heap for this market
-    orderStorage.addOrders(req.body.maker, req.body.taker, req.body.maker.target_tracer)
-    //repoll the number of orders
-    numOrders = orderStorage.getOrderCounter(req.body.maker.target_tracer)
-
-    //If enough orders are present, process the orders on chain
-    if (numOrders >= process.env.BATCH_SIZE) {
-        //submit orders
-        console.log(`Submitting ${numOrders} orders to contract`)
-        let ordersToSubmit = orderStorage.getAllOrders(req.body.maker.target_tracer)
-        try {
-            await submitOrders(ordersToSubmit[0], ordersToSubmit[1], traderContract, process.env.GAS_LIMIT, web3.eth.defaultAccount)
-            //TODO: Decide on error handling for if submitOrders does not process for some reason.
-            //clear order storage for this market
-            orderStorage.clearMarket(req.body.maker.target_tracer)
-            console.log(`Orders submitted and cleared`)
-        } catch {
-            console.log(`Error submitting batch: `)
-            console.log(ordersToSubmit)
-        }
-    }
+    orderBatcher.addMatch([req.body.maker, req.body.taker])
 
     //Return
     res.status(200).send()
@@ -108,7 +83,6 @@ app.post('/submit', async (req, res) => {
  */
 app.post('/check', async (req, res) => {
     if (!req.body.order) {
-        console.log("missing order")
         return res.status(400).send({ error: "Invalid params provided" })
     }
 
@@ -160,17 +134,17 @@ app.post('/check', async (req, res) => {
 
     const isValidMarginAfterTrade = validateMarginAfterTrade({
         currentPosition: {
-            quote: accounting.fromWad(currentPosition.position.quote),
-            base: accounting.fromWad(currentPosition.position.base)
+            quote: fromWad(currentPosition.position.quote),
+            base: fromWad(currentPosition.position.base)
         },
         trade: {
-            amount: accounting.fromWad(contractOrder.order.amount),
-            price: accounting.fromWad(contractOrder.order.price),
+            amount: fromWad(contractOrder.order.amount),
+            price: fromWad(contractOrder.order.price),
             side: contractOrder.order.side
         },
-        feeRate: accounting.fromWad(feeRate),
-        maxLeverage: accounting.fromWad(trueMaxLeverage),
-        fairPrice: accounting.fromWad(fairPrice)
+        feeRate: fromWad(feeRate),
+        maxLeverage: fromWad(trueMaxLeverage),
+        fairPrice: fromWad(fairPrice)
     })
 
     if(!isValidMarginAfterTrade) {
@@ -190,24 +164,8 @@ app.post('/check', async (req, res) => {
  * Will return the state of the current pending orders for a given market
  */
 app.get('/pending-orders/:market', (req, res) => {
-    if (!req.params.market) {
-        res.status(500)
-    } else {
-        let orders = orderStorage.getAllOrders(req.params.market)
-        if (orders === null) {
-            res.status(200).send({
-                "makeOrders": [],
-                "takeOrders": [],
-                "count": 0
-            })
-        } else {
-            res.status(200).send({
-                "makeOrders": orders[0],
-                "takeOrders": orders[1],
-                "count": orders[2]
-            })
-        }
-    }
+    const pendingOrders = orderBatcher.getPendingOrdersForMarket(req.params.market)
+    res.status(200).send(pendingOrders)
 })
 
 //Start up the server
@@ -221,11 +179,17 @@ app.listen(3000, async () => {
         BATCH_SIZE: ${process.env.BATCH_SIZE}\n
         NETWORK_ID: ${process.env.NETWORK_ID}\n
     `)
+
     //Setup signing account
     const account = web3.eth.accounts.privateKeyToAccount(process.env.PRIVATE_KEY);
     web3.eth.accounts.wallet.add(account);
     web3.eth.defaultAccount = account.address;
     traderContract = new web3.eth.Contract(traderABI, process.env.TRADER_CONTRACT)
+
+    // begin processing matched orders
+    const maxRetries = process.env.MATCH_SUBMISSION_RETRIES || 2
+    orderBatcher.startSubmittingMatches(traderContract, process.env.GAS_LIMIT, web3.eth.defaultAccount, maxRetries)
+
     console.log("Execute order 66")
 });
 

@@ -1,17 +1,23 @@
-let assert = require('assert');
-let fetch = require('node-fetch');
+const assert = require('assert');
+const sinon = require('sinon')
+const fetch = require('node-fetch');
 require('dotenv').config()
-let Web3 = require('web3');
-let web3 = new Web3(process.env.ETH_URL)
+const Web3 = require('web3');
+const web3 = new Web3(process.env.ETH_URL)
+
 //Startup the server
 require("../index")
+const orderBatcher = require('../orderBatcherSingleton')
 
 //EIP712 Signature Example
-let exampleSignatureRaw = "0x790638318b21ec73c6ac6cf5596d32bfe63928bd2fe6793e969c300e6039507235ff44e018faec98c43ec61d1919242dd11979a4692cb162571df703135e18fc1b"
+const exampleSignatureRaw = "0x790638318b21ec73c6ac6cf5596d32bfe63928bd2fe6793e969c300e6039507235ff44e018faec98c43ec61d1919242dd11979a4692cb162571df703135e18fc1b"
+const target_tracer = "0x529da3408a37a91c8154c64f3628db4eaa7b8da2"
+const user = "0x110af92Ba116fD7868216AA794a7E4dA3b9D7D11"
+
 const sampleOrder1 = {
     "id": 0,
-    "user": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
-    "target_tracer": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
+    "user": user,
+    "target_tracer": target_tracer,
     "side": "Bid",
     "price": 12,
     "amount": 5,
@@ -22,8 +28,8 @@ const sampleOrder1 = {
 
 const sampleOrder2 = {
     "id": 0,
-    "user": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
-    "target_tracer": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
+    "user": user,
+    "target_tracer": target_tracer,
     "side": "Ask",
     "price": 12,
     "amount": 5,
@@ -34,13 +40,24 @@ const sampleOrder2 = {
 
 const faultyOrder = {
     "id": 0,
-    "user": "0x529da3408a37a91c8154c64f3628db4eaa7b8da2",
+    "user": user,
     "side": "Bid",
     "price": 12,
     "amount": 5,
     "expiration": 1596600983,
     "signed_data": web3.utils.hexToBytes(exampleSignatureRaw),
 }
+
+let orderSubmissionStub;
+
+before(() => {
+    orderSubmissionStub = sinon.stub(orderBatcher, 'submitOrders').resolves()
+})
+
+after(() => {
+    orderSubmissionStub.restore()
+    orderBatcher.stopSubmittingMatches()
+})
 
 it('Healthcheck on / endpoint', async () => {
     let req = await fetch('http://localhost:3000')
@@ -78,7 +95,7 @@ it('Kepers track of records', async () => {
         await fetch('http://localhost:3000/submit', { method: "POST", body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' } })
     }
 
-    let pendingOrders = await fetch(`http://localhost:3000/pending-orders/0x529da3408a37a91c8154c64f3628db4eaa7b8da2`)
+    let pendingOrders = await fetch(`http://localhost:3000/pending-orders/${target_tracer}`)
     let result = await pendingOrders.json()
     //20 orders from this test, 2 from test 2
     assert.strictEqual(result.count, 22)
