@@ -1,5 +1,6 @@
 const Bottleneck = require('bottleneck');
 const orderSubmission = require('./orderSubmission')
+const lib = require('./lib')
 
 class OrderBatcher {
   constructor(batchInterval, batchSize) {
@@ -45,9 +46,11 @@ class OrderBatcher {
           await this.submitOrders(makerOrders, takerOrders, contract, gasLimit, sender)
           this.removePendingMatches(nextBatch)
         } catch (error) {
-          console.log(`ERROR SUBMITTING BATCH (ATTEMPT ${nextBatch.attempts})`, error.message, JSON.stringify(nextBatch, null, 2))
+          const message = `ERROR SUBMITTING BATCH (ATTEMPT ${nextBatch.attempts}): ${error.message}\n ${JSON.stringify(nextBatch, null, 2)}`
+          console.log(message)
+          this.sendMessageToDiscord(message)
           // if there are still attempts left
-          if(nextBatch.attempts <= maxAttempts) {
+          if(nextBatch.attempts < maxAttempts) {
             // add it back to the start of the queue for retrying
             this.processingQueue.unshift(nextBatch);
           } else {
@@ -117,12 +120,16 @@ class OrderBatcher {
     this.isSubmitting = false
   }
 
-  resetProcessingQueue = () => {
+  resetProcessingQueue () {
     this.processingQueue = []
   }
 
-  resetPendingQueue = () => {
+  resetPendingQueue () {
     this.pendingQueue = []
+  }
+
+  sendMessageToDiscord(...args) {
+    return lib.sendMessageToDiscord(...args)
   }
 }
 

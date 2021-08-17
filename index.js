@@ -28,13 +28,40 @@ app.get('/', (req, res) => {
     res.status(200).send();
 });
 
+const routeWithErrorHandling = handler => async (req, res, next) => {
+    try {
+        await handler(req, res);
+    } catch (error) {
+        next(error);
+    }
+};
+
+const fallbackErrorHandler = function (error, req, res, next) {
+    console.error('Caught Unhandled Error:', error.stack);
+    console.error('Request:', JSON.stringify({
+        headers: req.headers,
+        protocol: req.protocol,
+        url: req.url,
+        method: req.method,
+        body: req.body,
+        cookies: req.cookies,
+        ip: req.ip
+    }, null, 2));
+    if (process.env.NODE_ENV === 'production') {
+        res.status(500).send({ message: 'Unhandled Error' });
+    } else {
+        res.status(500).send({ message: 'Unhandled Error', data: error.stack });
+    }
+};
+
+app.use(fallbackErrorHandler)
+
 /**
  * Endpoint used for submitting pairs of orders to the executioner. WIll process the orders
  * once the minimum number of orders (as given by the BATCH_SIZE env variable) is met.
  */
-app.post('/submit', async (req, res) => {
+app.post('/submit', routeWithErrorHandling((req, res) => {
     //Validate orders
-
     const makerValidation = validateOrder(req.body.maker);
 
     if(!makerValidation.isValid) {
@@ -72,16 +99,15 @@ app.post('/submit', async (req, res) => {
 
     orderBatcher.addMatch([req.body.maker, req.body.taker])
 
-    //Return
     res.status(200).send()
-})
+}))
 
 /**
  * Endpoint for validation of orders. Used by the OME to validate signatures before
  * passing on the orders to the book. This rejects invalid orders early to avoid
  * false liquidity on the books.
  */
-app.post('/check', async (req, res) => {
+app.post('/check', routeWithErrorHandling(async (req, res) => {
     if (!req.body.order) {
         return res.status(400).send({ error: "Invalid params provided" })
     }
@@ -158,15 +184,15 @@ app.post('/check', async (req, res) => {
         message: 'Order is valid',
         order: contractOrder.order
     })
-})
+}))
 
 /**
  * Will return the state of the current pending orders for a given market
  */
-app.get('/pending-orders/:market', (req, res) => {
+app.get('/pending-orders/:market', routeWithErrorHandling((req, res) => {
     const pendingOrders = orderBatcher.getPendingOrdersForMarket(req.params.market)
     res.status(200).send(pendingOrders)
-})
+}))
 
 //Start up the server
 app.listen(3000, async () => {
