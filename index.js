@@ -16,6 +16,7 @@ const {
 } = require('./orderValidation')
 
 const orderBatcher = require('./orderBatcherSingleton')
+const { sendMessageToDiscord } = require('./lib')
 
 // Create a new express app instance
 const app = express();
@@ -38,7 +39,7 @@ const routeWithErrorHandling = handler => async (req, res, next) => {
 
 const fallbackErrorHandler = function (error, req, res, next) {
     console.error('Caught Unhandled Error:', error.stack);
-    console.error('Request:', JSON.stringify({
+    const requestContext = JSON.stringify({
         headers: req.headers,
         protocol: req.protocol,
         url: req.url,
@@ -46,7 +47,13 @@ const fallbackErrorHandler = function (error, req, res, next) {
         body: req.body,
         cookies: req.cookies,
         ip: req.ip
-    }, null, 2));
+    }, null, 2)
+    console.error('Request:', requestContext);
+    try {
+        sendMessageToDiscord(`Caught unhandled error in executioner router: ${error.stack}\n${requestContext}}`)
+    } catch (error) {
+        console.log(`failed to send discord webhook alert for unhandled router error: ${error.message}`)
+    }
     if (process.env.NODE_ENV === 'production') {
         res.status(500).send({ message: 'Unhandled Error' });
     } else {
