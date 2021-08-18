@@ -37,7 +37,7 @@ const routeWithErrorHandling = handler => async (req, res, next) => {
     }
 };
 
-const fallbackErrorHandler = function (error, req, res, next) {
+const fallbackErrorHandler = async function (error, req, res, next) {
     console.error('Caught Unhandled Error:', error.stack);
     const requestContext = JSON.stringify({
         headers: req.headers,
