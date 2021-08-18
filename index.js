@@ -50,7 +50,7 @@ const fallbackErrorHandler = function (error, req, res, next) {
     }, null, 2)
     console.error('Request:', requestContext);
     try {
-        sendMessageToDiscord(`Caught unhandled error in executioner router: ${error.stack}\n${requestContext}}`)
+        await sendMessageToDiscord(`Caught unhandled error in executioner router: ${error.stack}\n${requestContext}}`)
     } catch (error) {
         console.log(`failed to send discord webhook alert for unhandled router error: ${error.message}`)
     }
