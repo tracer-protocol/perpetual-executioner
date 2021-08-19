@@ -18,18 +18,21 @@ after(() => {
 
 context('Order Batching', () => {
   let submitOrdersStub;
+  let sendMessageToDiscordStub;
   let orderBatcher;
 
   beforeEach(async () => {
     // each test gets a new instance of OrderBatcher
     orderBatcher = new OrderBatcher(batchInterval, batchSize)
     submitOrdersStub = sinon.stub(orderBatcher, 'submitOrders').resolves()
+    sendMessageToDiscordStub = sinon.stub(orderBatcher, 'sendMessageToDiscord').resolves()
     orderBatcher.resetProcessingQueue()
     orderBatcher.resetPendingQueue()
   })
 
   afterEach(() => {
     submitOrdersStub.restore()
+    sendMessageToDiscordStub.restore()
   })
 
   it('Adds a match to the batcher', async() => {
@@ -74,7 +77,7 @@ context('Order Batching', () => {
   it('Attempts up to the maxAttempts and then abandons batch', async() => {
     // force submission to fail
     submitOrdersStub.restore()
-    submitOrdersStub = sinon.stub(orderSubmission, 'submitOrders').rejects()
+    submitOrdersStub = sinon.stub(orderSubmission, 'submitOrders').rejects(new Error('Test Error'))
 
     orderBatcher.addMatch([sampleAsk, sampleBid])
     const mockContract = 'mockContract'
@@ -101,6 +104,12 @@ context('Order Batching', () => {
       mockSender
     ])
     expect(submitOrdersStub.args).eql(expectedSubmissionAttempts)
+
+    expect(sendMessageToDiscordStub.callCount).eql(maxAttempts)
+    expect(sendMessageToDiscordStub.args).eql([
+      [`ERROR SUBMITTING BATCH (ATTEMPT 1): Test Error\n ${JSON.stringify([[sampleAsk, sampleBid]], null, 2)}`],
+      [`ERROR SUBMITTING BATCH (ATTEMPT 2): Test Error\n ${JSON.stringify([[sampleAsk, sampleBid]], null, 2)}`]
+    ])
   })
 })
 
