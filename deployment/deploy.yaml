@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: tracer-executioner
-        image: gcr.io/tracer-protocol-testing/executioner:0.0.1
+        image: gcr.io/tracer-protocol-testing/executioner:0.0.2
         envFrom:
         - configMapRef:
             name: executioner-env
